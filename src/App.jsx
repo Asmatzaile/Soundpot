@@ -12,12 +12,28 @@ function App() {
     return newHighestZIndex;
   }
 
-  const [soundInstancesData, setSoundInstancesData] = useState([]);
-  const addSoundInstance = (instanceData) => setSoundInstancesData([...soundInstancesData, instanceData]);
+  const [lastInstanceKey, setLastInstanceKey] = useState(-1);
+  const getNewInstanceKey = () => {
+    const newInstanceKey = lastInstanceKey + 1;
+    setLastInstanceKey(newInstanceKey);
+    return newInstanceKey;
+  }
 
+  const [soundInstancesData, setSoundInstancesData] = useState(new Set());
+  const addSoundInstance = (instanceData) => {
+    const key = getNewInstanceKey();
+    setSoundInstancesData(new Set([...soundInstancesData.add({...instanceData, key})]));
+  }
+
+  const removeSoundInstance = (instanceData) => {
+    soundInstancesData.delete(instanceData);
+    setSoundInstancesData(new Set([...soundInstancesData]));
+  }
+
+  const soundInstances = [...soundInstancesData].map(instanceData => <SoundInstance key={instanceData.key} deleteSelf={()=>removeSoundInstance(instanceData)} soundClass={instanceData.soundClass} pos={instanceData.pos} getHigherZIndex={getHigherZIndex} />);
   return (
     <main className="min-h-dvh grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
-      <Pot soundInstances={soundInstancesData.map(instanceData=> <SoundInstance soundClass={instanceData.soundClass} pos={instanceData.pos} getHigherZIndex={getHigherZIndex} />)}/>
+      <Pot soundInstances={soundInstances}/>
       <Library soundClasses={soundClasses} addSoundInstance={addSoundInstance} />
     </main>
   )
@@ -54,14 +70,18 @@ const SoundClass = ( { soundClass, createSoundInstance }) => {
   )
 }
 
-const SoundInstance = ({ soundClass, getHigherZIndex, pos }) => {
+const SoundInstance = ({ soundClass, getHigherZIndex, pos, deleteSelf }) => {
   const borderColor = useRef(borderColorNames[soundClass]);
   const [zIndex, setZIndex] = useState(0);
 
   const [dragging, setDragging] = useState(false)
   const [{ x, y }, api] = useSpring(() => ({ x: 0, y: 0}))
-  const bind = useDrag(({ active, first, offset: [x, y] }) => {
+  const bind = useDrag(({ active, first, last, xy, offset: [x, y] }) => {
     if (first) setZIndex(getHigherZIndex(zIndex));
+    if (last) {
+      const elems = document.elementsFromPoint(xy[0], xy[1]); // thanks https://github.com/pmndrs/use-gesture/issues/88#issuecomment-1154734405
+      if (elems && !elems.some(elem=>elem.id=="pot")) deleteSelf();
+    }
     setDragging(active);
     api.start({ x, y });
   })
