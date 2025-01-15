@@ -5,12 +5,6 @@ import { useDrag } from '@use-gesture/react'
 function App() {
   const soundClasses = [0,1,2,3,4,5,6].map((soundClass)=> <SoundClass soundClass={soundClass} createSoundInstance={(pos)=>addSoundInstance({soundClass, pos})} /> )
 
-  const [highestZIndex, setHighestZIndex] = useState(1);
-  const getHigherZIndex = (zIndex) => {
-    const newHighestZIndex = (zIndex >= highestZIndex) ? zIndex : highestZIndex + 1;
-    setHighestZIndex(newHighestZIndex);
-    return newHighestZIndex;
-  }
 
   const [lastInstanceKey, setLastInstanceKey] = useState(-1);
   const getNewInstanceKey = () => {
@@ -25,12 +19,21 @@ function App() {
     setSoundInstancesData(new Map(soundInstancesData.set(key, instanceData)));
   }
 
-  const removeSoundInstance = (key) => {
-    soundInstancesData.delete(key);
-    setSoundInstancesData(new Map(soundInstancesData));
+  const [highestZIndex, setHighestZIndex] = useState(1);
+
+  const instanceFunctions = {
+    removeInstance: (key) => {
+      soundInstancesData.delete(key);
+      setSoundInstancesData(new Map(soundInstancesData));
+    },
+    getHigherZIndex: (zIndex) => {
+      const newHighestZIndex = (zIndex >= highestZIndex) ? zIndex : highestZIndex + 1;
+      setHighestZIndex(newHighestZIndex);
+      return newHighestZIndex;
+    },
   }
 
-  const soundInstances = [...soundInstancesData.entries()].map(([key, instanceData]) => <SoundInstance key={key} id={key} removeInstance={removeSoundInstance} soundClass={instanceData.soundClass} pos={instanceData.pos} getHigherZIndex={getHigherZIndex} />);
+  const soundInstances = [...soundInstancesData.entries()].map(([key, instanceData]) => <SoundInstance key={key} id={key} functions={instanceFunctions} soundClass={instanceData.soundClass} pos={instanceData.pos} />);
   return (
     <main className="min-h-dvh grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
       <Pot soundInstances={soundInstances}/>
@@ -76,17 +79,17 @@ const SoundClass = ( { soundClass, createSoundInstance }) => {
   )
 }
 
-const SoundInstance = ({ id, soundClass, getHigherZIndex, pos, removeInstance }) => {
+const SoundInstance = ({ id, soundClass, pos, functions }) => {
   const borderColor = useRef(borderColorNames[soundClass]);
   const [zIndex, setZIndex] = useState(0);
 
   const [dragging, setDragging] = useState(false)
   const [{ x, y }, api] = useSpring(() => ({ x: pos.x, y: pos.y}))
   const bind = useDrag(({ active, first, last, xy, offset: [x, y] }) => {
-    if (first) setZIndex(getHigherZIndex(zIndex));
+    if (first) setZIndex(functions.getHigherZIndex(zIndex));
     if (last) {
       const elems = document.elementsFromPoint(xy[0], xy[1]); // thanks https://github.com/pmndrs/use-gesture/issues/88#issuecomment-1154734405
-      if (elems && !elems.some(elem=>elem.id=="pot")) removeInstance(id);
+      if (elems && !elems.some(elem=>elem.id=="pot")) functions.removeInstance(id);
     }
     setDragging(active);
     api.start({ x, y });
