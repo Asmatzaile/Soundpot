@@ -70,7 +70,7 @@ const SoundClass = ( { soundClass, createSoundInstance }) => {
   }
 
   return (
-    <div ref={divRef} className={`w-16 h-16 border-8 rounded-full ${borderColor.current} cursor-grab touch-none grid place-content-center text-white`}
+    <div ref={divRef} className={`w-16 h-16 border-8 rounded-full ${borderColor.current} cursor-grab touch-none grid place-content-center text-white select-none`}
       onPointerDown={handlePointerDown}
     >{soundClass}</div>
   )
