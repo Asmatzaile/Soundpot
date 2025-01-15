@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSpring, animated } from '@react-spring/web'
 import { useDrag } from '@use-gesture/react'
 
@@ -64,9 +64,14 @@ const SoundClass = ( { soundClass, createSoundInstance }) => {
   const divRef = useRef(null);
   const borderColor = useRef(borderColorNames[soundClass]);
 
+  const handlePointerDown = (e) => {
+    createSoundInstance({x0: getElementCenter(divRef.current).x, y0: getElementCenter(divRef.current).y});
+    setTimeout(() => createPointerDownEvent(e.clientX, e.clientY), 1); // we simulate a pointerdown event so that the created instance is taken up
+  }
+
   return (
     <div ref={divRef} className={`w-16 h-16 border-8 rounded-full ${borderColor.current} cursor-grab touch-none grid place-content-center text-white`}
-      onPointerDown={(e) => createSoundInstance({x0: getElementCenter(divRef.current).x, y0: getElementCenter(divRef.current).y, mx0: e.clientX, my0: e.clientY})}
+      onPointerDown={handlePointerDown}
     >{soundClass}</div>
   )
 }
@@ -87,15 +92,10 @@ const SoundInstance = ({ soundClass, getHigherZIndex, pos, deleteSelf }) => {
     api.start({ x, y });
   })
 
-  const divRef = useRef(null);
-  useEffect(() => {
-    const pointerEvent = new PointerEvent("pointerdown", {buttons: 1, clientX: pos.mx0, clientY: pos.my0, bubbles:true})
-    divRef.current.dispatchEvent(pointerEvent);
-  }, []);
 
   const left = pos.x0-48; // 96 px wide
   const top = pos.y0-48; // 96 px tall
-  return <animated.div {...bind()} ref={divRef}
+  return <animated.div {...bind()}
     className={`absolute w-24 h-24 border-8 rounded-full ${borderColor.current} ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none grid place-content-center text-white`}
     style={{ x, y, zIndex, left, top }} >{soundClass}</animated.div>
 }
@@ -106,6 +106,12 @@ const getElementCenter = (element) => {
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
   return {x: centerX, y: centerY}
+}
+
+const createPointerDownEvent = (mx, my) => {
+    const el = document.elementFromPoint(mx, my);
+    const pointerEvent = new PointerEvent("pointerdown", {buttons: 1, clientX: mx, clientY: my, bubbles:true})
+    el.dispatchEvent(pointerEvent);
 }
 
 export default App
