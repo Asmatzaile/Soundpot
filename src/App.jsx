@@ -65,7 +65,7 @@ const SoundClass = ( { soundClass, createSoundInstance }) => {
   const borderColor = useRef(borderColorNames[soundClass]);
 
   const handlePointerDown = (e) => {
-    createSoundInstance({x0: getElementCenter(divRef.current).x, y0: getElementCenter(divRef.current).y});
+    createSoundInstance({x: getElementCenter(divRef.current).x, y: getElementCenter(divRef.current).y});
     setTimeout(() => createPointerDownEvent(e.clientX, e.clientY), 1); // we simulate a pointerdown event so that the created instance is taken up
   }
 
@@ -81,7 +81,7 @@ const SoundInstance = ({ soundClass, getHigherZIndex, pos, deleteSelf }) => {
   const [zIndex, setZIndex] = useState(0);
 
   const [dragging, setDragging] = useState(false)
-  const [{ x, y }, api] = useSpring(() => ({ x: 0, y: 0}))
+  const [{ x, y }, api] = useSpring(() => ({ x: pos.x, y: pos.y}))
   const bind = useDrag(({ active, first, last, xy, offset: [x, y] }) => {
     if (first) setZIndex(getHigherZIndex(zIndex));
     if (last) {
@@ -90,14 +90,14 @@ const SoundInstance = ({ soundClass, getHigherZIndex, pos, deleteSelf }) => {
     }
     setDragging(active);
     api.start({ x, y });
-  })
+    },
+    {from: () => [x.get(), y.get()]}
+  )
 
 
-  const left = pos.x0-48; // 96 px wide
-  const top = pos.y0-48; // 96 px tall
   return <animated.div {...bind()}
     className={`absolute w-24 h-24 border-8 rounded-full ${borderColor.current} ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none grid place-content-center text-white`}
-    style={{ x, y, zIndex, left, top }} >{soundClass}</animated.div>
+    style={{ x, y, zIndex, left: "-48px", top: "-48px" }} >{soundClass}</animated.div>
 }
 
 
