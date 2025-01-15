@@ -3,8 +3,19 @@ import { useSpring, animated } from '@react-spring/web'
 import { useDrag } from '@use-gesture/react'
 
 function App() {
-  const soundClasses = [0,1,2,3,4,5,6].map((soundClass)=> <SoundClass soundClass={soundClass} createSoundInstance={(pos)=>addSoundInstance({soundClass, pos})} /> )
+  const defaultSoundClassesData = new Map(Object.entries({0: {soundClass: 0}, 1: {soundClass: 1}, 2: {soundClass: 2}, 3: {soundClass: 3}}));
+  const [soundClassesData, setSoundClassesData] = useState(defaultSoundClassesData);
 
+  const [lastClassKey, setLastClassKey] = useState(-1 + soundClassesData.size);
+  const getNewClassKey = () => {
+    const newClassKey = lastClassKey + 1;
+    setLastClassKey(newClassKey);
+    return newClassKey;
+  }
+  const addSoundClass = (classData) => {
+    const key = getNewClassKey();
+    setSoundClassesData(new Map(soundClassesData.set(key, classData)));
+  }
 
   const [lastInstanceKey, setLastInstanceKey] = useState(-1);
   const getNewInstanceKey = () => {
@@ -25,9 +36,15 @@ function App() {
   const mergeSoundInstances = (key1, key2) => {
     const {soundClass: soundClass1, pos: pos1} = soundInstancesData.get(key1);
     const {soundClass: soundClass2, pos: pos2} = soundInstancesData.get(key2);
+
     const soundClass = soundClass1 + soundClass2;
     const pos = {x: (pos1.x + pos2.x) / 2, y: (pos1.y + pos2.y) / 2};
     addSoundInstance({soundClass, pos});
+
+    if (![...soundClassesData.values()].some(classData => classData.soundClass === soundClass)) {
+      addSoundClass({soundClass: soundClass});
+    }
+
     removeSoundInstance(key1);
     removeSoundInstance(key2);
   }
@@ -54,6 +71,7 @@ function App() {
     }
   }
 
+  const soundClasses = [...soundClassesData.entries()].map(([key, {soundClass}]) => <SoundClass key={key} soundClass={soundClass} createSoundInstance={(pos)=>addSoundInstance({soundClass, pos})} />);
   const soundInstances = [...soundInstancesData.entries()].map(([key, instanceData]) => <SoundInstance key={key} id={key} functions={instanceFunctions} soundClass={instanceData.soundClass} pos={instanceData.pos} />);
   return (
     <main className="min-h-dvh grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
