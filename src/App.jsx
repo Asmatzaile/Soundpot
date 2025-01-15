@@ -65,8 +65,9 @@ const SoundClass = ( { soundClass, createSoundInstance }) => {
   const borderColor = useRef(borderColorNames[soundClass]);
 
   return (
-    <div ref={divRef} className={`w-16 h-16 border-8 rounded-full ${borderColor.current} cursor-grab touch-none`}
-      onPointerDown={(e) => createSoundInstance({x0: getElementCenter(divRef.current).x, y0: getElementCenter(divRef.current).y, mx0: e.clientX, my0: e.clientY})}/>
+    <div ref={divRef} className={`w-16 h-16 border-8 rounded-full ${borderColor.current} cursor-grab touch-none grid place-content-center text-white`}
+      onPointerDown={(e) => createSoundInstance({x0: getElementCenter(divRef.current).x, y0: getElementCenter(divRef.current).y, mx0: e.clientX, my0: e.clientY})}
+    >{soundClass}</div>
   )
 }
 
@@ -95,8 +96,8 @@ const SoundInstance = ({ soundClass, getHigherZIndex, pos, deleteSelf }) => {
   const left = pos.x0-48; // 96 px wide
   const top = pos.y0-48; // 96 px tall
   return <animated.div {...bind()} ref={divRef}
-    className={`absolute w-24 h-24 border-8 rounded-full ${borderColor.current} ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none`}
-    style={{ x, y, zIndex, left, top }} />
+    className={`absolute w-24 h-24 border-8 rounded-full ${borderColor.current} ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none grid place-content-center text-white`}
+    style={{ x, y, zIndex, left, top }} >{soundClass}</animated.div>
 }
 
 
