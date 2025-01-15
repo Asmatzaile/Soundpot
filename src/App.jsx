@@ -19,18 +19,18 @@ function App() {
     return newInstanceKey;
   }
 
-  const [soundInstancesData, setSoundInstancesData] = useState(new Set());
+  const [soundInstancesData, setSoundInstancesData] = useState(new Map());
   const addSoundInstance = (instanceData) => {
     const key = getNewInstanceKey();
-    setSoundInstancesData(new Set([...soundInstancesData.add({...instanceData, key})]));
+    setSoundInstancesData(new Map(soundInstancesData.set(key, instanceData)));
   }
 
-  const removeSoundInstance = (instanceData) => {
-    soundInstancesData.delete(instanceData);
-    setSoundInstancesData(new Set([...soundInstancesData]));
+  const removeSoundInstance = (key) => {
+    soundInstancesData.delete(key);
+    setSoundInstancesData(new Map(soundInstancesData));
   }
 
-  const soundInstances = [...soundInstancesData].map(instanceData => <SoundInstance key={instanceData.key} deleteSelf={()=>removeSoundInstance(instanceData)} soundClass={instanceData.soundClass} pos={instanceData.pos} getHigherZIndex={getHigherZIndex} />);
+  const soundInstances = [...soundInstancesData.entries()].map(([key, instanceData]) => <SoundInstance key={key} id={key} removeInstance={removeSoundInstance} soundClass={instanceData.soundClass} pos={instanceData.pos} getHigherZIndex={getHigherZIndex} />);
   return (
     <main className="min-h-dvh grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
       <Pot soundInstances={soundInstances}/>
@@ -76,7 +76,7 @@ const SoundClass = ( { soundClass, createSoundInstance }) => {
   )
 }
 
-const SoundInstance = ({ soundClass, getHigherZIndex, pos, deleteSelf }) => {
+const SoundInstance = ({ id, soundClass, getHigherZIndex, pos, removeInstance }) => {
   const borderColor = useRef(borderColorNames[soundClass]);
   const [zIndex, setZIndex] = useState(0);
 
@@ -86,7 +86,7 @@ const SoundInstance = ({ soundClass, getHigherZIndex, pos, deleteSelf }) => {
     if (first) setZIndex(getHigherZIndex(zIndex));
     if (last) {
       const elems = document.elementsFromPoint(xy[0], xy[1]); // thanks https://github.com/pmndrs/use-gesture/issues/88#issuecomment-1154734405
-      if (elems && !elems.some(elem=>elem.id=="pot")) deleteSelf();
+      if (elems && !elems.some(elem=>elem.id=="pot")) removeInstance(id);
     }
     setDragging(active);
     api.start({ x, y });
