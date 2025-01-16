@@ -89,6 +89,32 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
     setRipplesData(new Map(ripplesData));
   }
 
+  const rippleFunctions = {
+    remove: (key) => removeRipple(key),
+    updateSize: (key, newSize) => {
+      const newRippleData = {...ripplesData.get(key), size: newSize}
+      ripplesData.set(key, newRippleData);
+      checkRippleCollisions(newRippleData);
+      setRipplesData(new Map(ripplesData));
+    },
+    getMaxSize: () => maxRippleSize,
+  }
+
+  const checkRippleCollisions = (rippleData) => {
+    rippleData.collidedWith ??= []; // make sure the previous collision array exists
+
+    [...soundInstancesData.entries()].forEach(([instanceKey, instanceData])=> {
+      const {pos: ripplePos, size: rippleSize} = rippleData;
+      if (rippleData.collidedWith.includes(instanceKey)) return; // only care about new collisions
+      if (!doCirclesCollide(ripplePos.x, ripplePos.y, rippleSize/2, instanceData.pos.x, instanceData.pos.y, 48)) return;
+      if (rippleSize/2 > 48 && isCircleInCircle(ripplePos.x, ripplePos.y, rippleSize/2, instanceData.pos.x, instanceData.pos.y, 48)) return; // don't account for when perimeters aren't touching
+      console.log("collision with", instanceKey);
+      const newInstanceData = {...soundInstancesData.get(instanceKey), justCollided: true};
+      setSoundInstancesData(new Map(soundInstancesData.set(instanceKey, newInstanceData)));
+      rippleData.collidedWith.push(instanceKey)
+    });
+  }
+
   const potRef = useRef(null);
   useEffect(()=> {
     const { width, height } = potRef.current.getBoundingClientRect();
@@ -103,7 +129,7 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
     return () => potRef.current.removeEventListener("pointerdown", handlePointerDown)
   }, [ripplesData])
 
-  const ripples = [...ripplesData.entries()].map(([key, data]) => <Ripple key={key} {...data} destroy={() => removeRipple(key)} maxSize={maxRippleSize} />)
+  const ripples = [...ripplesData.entries()].map(([key, data]) => <Ripple key={key} id={key} {...data} functions={rippleFunctions} />)
   const soundInstances = [...soundInstancesData.entries()].map(([key, instanceData]) => <SoundInstance key={key} id={key} functions={instanceFunctions} soundClass={instanceData.soundClass} pos={instanceData.pos} />);
   return(
     <div id="pot" ref={potRef} className="bg-stone-900">
@@ -116,23 +142,27 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
 }
 
 // it would probably be more performant to draw them on a canvas
-const Ripple = ({maxSize, pos, destroy}) => {
-  const onRestRef = useRef(null);
+const Ripple = ({pos, id, functions}) => {
+  const onSpringEventRef = useRef(null);
 
   const [{size}, api] = useSpring(
     () => ({
       from: { size: 10 },
-      to: { size: maxSize },
+      to: { size: functions.getMaxSize() },
       config: {
         duration: 3000,
       },
-      onRest: () => onRestRef?.current(),
+      onRest: () => onSpringEventRef?.current.onRest(),
+      onChange: () => onSpringEventRef?.current.onChange(),
     }),
   )
   // needed because Spring memoizes everything
   useEffect(()=> {
-    onRestRef.current = () => destroy();
-  }, [destroy]);
+    onSpringEventRef.current = {
+      onRest: () => functions.remove(id),
+      onChange: () => functions.updateSize(id, size.get())
+    }
+  }, [functions]);
 
   useEffect(()=>{api.start()});
   return <animated.div className="border-stone-500 border-2 rounded-full absolute pointer-events-none"
@@ -217,6 +247,13 @@ const doCirclesCollide = (c1x, c1y, c1r, c2x, c2y, c2r) => {
   const dy = c2y - c1y;
   const d = Math.sqrt(dx*dx + dy*dy);
   return d <= c1r + c2r;
+}
+
+const isCircleInCircle = (c1x, c1y, c1r, c2x, c2y, c2r) => {
+  const dx = c2x - c1x;
+  const dy = c2y - c1y;
+  const d = Math.sqrt(dx*dx + dy*dy);
+  return d < Math.abs(c2r-c1r);
 }
 
 export default App
