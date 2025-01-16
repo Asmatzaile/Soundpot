@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSpring, animated } from '@react-spring/web'
 import { useDrag } from '@use-gesture/react'
+import * as Tone from "tone";
 
 function App() {
+  useEffect(()=> {
+    const compressor = new Tone.Compressor()
+    const reverb = new Tone.Reverb({ wet: 0.5 });
+    Tone.getDestination().chain(reverb, compressor);
+  }, []);
+
   const defaultSoundClassesData = new Map(Object.entries({0: {soundClass: 0}, 1: {soundClass: 1}, 2: {soundClass: 2}, 3: {soundClass: 3}}));
   const [soundClassesData, setSoundClassesData] = useState(defaultSoundClassesData);
 
@@ -191,6 +198,13 @@ const SoundClass = ( { soundClass, createSoundInstance }) => {
 }
 
 const SoundInstance = ({ id, soundClass, pos, functions, justCollided }) => {
+  const synthRef = useRef(null);
+  const synth = synthRef.current;
+  useEffect(() => {
+    synthRef.current = new Tone.Synth().toDestination();    
+    return () => synthRef.current.onsilence = () => synthRef.current.dispose();
+  }, [])
+  
   const borderColor = useRef(borderColorNames[soundClass%borderColorNames.length]);
   const [zIndex, setZIndex] = useState(0);
 
@@ -210,6 +224,7 @@ const SoundInstance = ({ id, soundClass, pos, functions, justCollided }) => {
   useEffect(()=> {
     transformApi.start({transform: `scale(${justCollided ? '1.3' : '1'})`, immediate: justCollided})
     if (!justCollided) return;
+    synth?.triggerAttackRelease(Tone.Frequency(soundClass + 48, "midi").toFrequency(), "8n");
     functions.updateInstance(id, {justCollided: false})
   }, [justCollided])
 
