@@ -6,27 +6,14 @@ function App() {
   const defaultSoundClassesData = new Map(Object.entries({0: {soundClass: 0}, 1: {soundClass: 1}, 2: {soundClass: 2}, 3: {soundClass: 3}}));
   const [soundClassesData, setSoundClassesData] = useState(defaultSoundClassesData);
 
-  const [lastClassKey, setLastClassKey] = useState(-1 + soundClassesData.size);
-  const getNewClassKey = () => {
-    const newClassKey = lastClassKey + 1;
-    setLastClassKey(newClassKey);
-    return newClassKey;
-  }
   const addSoundClass = (classData) => {
-    const key = getNewClassKey();
+    const key = Math.max(...soundClassesData.keys(), -1) + 1;
     setSoundClassesData(new Map(soundClassesData.set(key, classData)));
-  }
-
-  const [lastInstanceKey, setLastInstanceKey] = useState(-1);
-  const getNewInstanceKey = () => {
-    const newInstanceKey = lastInstanceKey + 1;
-    setLastInstanceKey(newInstanceKey);
-    return newInstanceKey;
   }
 
   const [soundInstancesData, setSoundInstancesData] = useState(new Map());
   const addSoundInstance = (instanceData) => {
-    const key = getNewInstanceKey();
+    const key = Math.max(...soundInstancesData.keys(), -1) + 1;
     setSoundInstancesData(new Map(soundInstancesData.set(key, instanceData)));
   }
   const removeSoundInstance = (key) => {
@@ -49,6 +36,26 @@ function App() {
     removeSoundInstance(key2);
   }
 
+  return (
+    <main className="min-h-dvh grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
+      <Pot soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} removeSoundInstance={removeSoundInstance} mergeSoundInstances={mergeSoundInstances}/>
+      <Library soundClassesData={soundClassesData} addSoundInstance={addSoundInstance} />
+    </main>
+  )
+}
+
+const Library = ({ soundClassesData, addSoundInstance }) => {
+  const soundClasses = [...soundClassesData.entries()].map(([key, {soundClass}]) => <SoundClass key={key} soundClass={soundClass} createSoundInstance={(pos)=>addSoundInstance({soundClass, pos})} />);
+
+  return (
+    <div id="library" className="bg-stone-800 p-4 grid grid-cols-[repeat(auto-fill,_minmax(64px,_1fr))] content-start place-items-center gap-4">
+      {soundClasses}
+    </div>
+  )
+}
+
+const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, mergeSoundInstances }) => {
+
   const [highestZIndex, setHighestZIndex] = useState(1);
   const instanceFunctions = {
     removeInstance: (key) => removeSoundInstance(key),
@@ -57,8 +64,8 @@ function App() {
       setHighestZIndex(newHighestZIndex);
       return newHighestZIndex;
     },
-    updatePos: (key, [newX, newY]) => {
-      soundInstancesData.set(key, {...soundInstancesData.get(key), pos: {x: newX, y: newY}})
+    updatePos: (key, newPos) => {
+      soundInstancesData.set(key, {...soundInstancesData.get(key), pos: newPos})
       setSoundInstancesData(new Map(soundInstancesData));
     },
     checkMerges: (key) => {
@@ -71,35 +78,10 @@ function App() {
     }
   }
 
-  const soundClasses = [...soundClassesData.entries()].map(([key, {soundClass}]) => <SoundClass key={key} soundClass={soundClass} createSoundInstance={(pos)=>addSoundInstance({soundClass, pos})} />);
-  const soundInstances = [...soundInstancesData.entries()].map(([key, instanceData]) => <SoundInstance key={key} id={key} functions={instanceFunctions} soundClass={instanceData.soundClass} pos={instanceData.pos} />);
-  return (
-    <main className="min-h-dvh grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
-      <Pot soundInstances={soundInstances}/>
-      <Library soundClasses={soundClasses} addSoundInstance={addSoundInstance} />
-    </main>
-  )
-}
-
-const Library = ({ soundClasses }) => {
-  return (
-    <div id="library" className="bg-stone-800 p-4 grid grid-cols-[repeat(auto-fill,_minmax(64px,_1fr))] content-start place-items-center gap-4">
-      {soundClasses}
-    </div>
-  )
-}
-
-const Pot = ({ soundInstances }) => {
-  const [lastRippleKey, setLastRippleKey] = useState(-1);
-  const getNewRippleKey = () => {
-    const newRippleKey = lastRippleKey + 1;
-    setLastRippleKey(newRippleKey);
-    return newRippleKey;
-  }
   const [ripplesData, setRipplesData] = useState(new Map());
   const [maxRippleSize, setMaxRippleSize] = useState();
   const addRipple = (rippleData) => {
-    const key = getNewRippleKey();
+    const key = Math.max(...ripplesData.keys(), -1) + 1;
     setRipplesData(new Map(ripplesData.set(key, rippleData)));
   }
   const removeRipple = (key) => {
@@ -122,6 +104,7 @@ const Pot = ({ soundInstances }) => {
   }, [ripplesData])
 
   const ripples = [...ripplesData.entries()].map(([key, data]) => <Ripple key={key} {...data} destroy={() => removeRipple(key)} maxSize={maxRippleSize} />)
+  const soundInstances = [...soundInstancesData.entries()].map(([key, instanceData]) => <SoundInstance key={key} id={key} functions={instanceFunctions} soundClass={instanceData.soundClass} pos={instanceData.pos} />);
   return(
     <div id="pot" ref={potRef} className="bg-stone-900">
       <div id="ripple-container" className="overflow-hidden relative size-full pointer-events-none">
@@ -189,7 +172,7 @@ const SoundInstance = ({ id, soundClass, pos, functions }) => {
   // needed because Spring memoizes everything
   useEffect(()=> {
     onChangeRef.current = () => {
-      functions.updatePos(id, [x.get(), y.get()]);
+      functions.updatePos(id, {x: x.get(), y: y.get()});
       if (!dragging) functions.checkMerges(id);
     }
   }, [dragging, functions]) // functions is also a dep cause it relies on current values of soundInstancesData
