@@ -64,8 +64,8 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
       setHighestZIndex(newHighestZIndex);
       return newHighestZIndex;
     },
-    updatePos: (key, newPos) => {
-      soundInstancesData.set(key, {...soundInstancesData.get(key), pos: newPos})
+    updateInstance: (key, newValues) => {
+      soundInstancesData.set(key, {...soundInstancesData.get(key), ...newValues})
       setSoundInstancesData(new Map(soundInstancesData));
     },
     checkMerges: (key) => {
@@ -108,7 +108,6 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
       if (rippleData.collidedWith.includes(instanceKey)) return; // only care about new collisions
       if (!doCirclesCollide(ripplePos.x, ripplePos.y, rippleSize/2, instanceData.pos.x, instanceData.pos.y, 48)) return;
       if (rippleSize/2 > 48 && isCircleInCircle(ripplePos.x, ripplePos.y, rippleSize/2, instanceData.pos.x, instanceData.pos.y, 48)) return; // don't account for when perimeters aren't touching
-      console.log("collision with", instanceKey);
       const newInstanceData = {...soundInstancesData.get(instanceKey), justCollided: true};
       setSoundInstancesData(new Map(soundInstancesData.set(instanceKey, newInstanceData)));
       rippleData.collidedWith.push(instanceKey)
@@ -130,7 +129,7 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
   }, [ripplesData])
 
   const ripples = [...ripplesData.entries()].map(([key, data]) => <Ripple key={key} id={key} {...data} functions={rippleFunctions} />)
-  const soundInstances = [...soundInstancesData.entries()].map(([key, instanceData]) => <SoundInstance key={key} id={key} functions={instanceFunctions} soundClass={instanceData.soundClass} pos={instanceData.pos} />);
+  const soundInstances = [...soundInstancesData.entries()].map(([key, instanceData]) => <SoundInstance key={key} id={key} functions={instanceFunctions} {...instanceData} />);
   return(
     <div id="pot" ref={potRef} className="bg-stone-900">
       <div id="ripple-container" className="overflow-hidden relative size-full pointer-events-none">
@@ -191,21 +190,28 @@ const SoundClass = ( { soundClass, createSoundInstance }) => {
   )
 }
 
-const SoundInstance = ({ id, soundClass, pos, functions }) => {
+const SoundInstance = ({ id, soundClass, pos, functions, justCollided }) => {
   const borderColor = useRef(borderColorNames[soundClass%borderColorNames.length]);
   const [zIndex, setZIndex] = useState(0);
 
   const [dragging, setDragging] = useState(false)
   const onChangeRef = useRef(null);
-  const [{ x, y }, api] = useSpring(() => ({ x: pos.x, y: pos.y, onChange: () => onChangeRef?.current()}))
+  const [{ x, y }, posApi] = useSpring(() => ({ x: pos.x, y: pos.y, onChange: () => onChangeRef?.current()}))
 
   // needed because Spring memoizes everything
   useEffect(()=> {
     onChangeRef.current = () => {
-      functions.updatePos(id, {x: x.get(), y: y.get()});
+      functions.updateInstance(id, {pos: {x: x.get(), y: y.get()}});
       if (!dragging) functions.checkMerges(id);
     }
   }, [dragging, functions]) // functions is also a dep cause it relies on current values of soundInstancesData
+
+  const [{ transform }, transformApi] = useSpring(() => ({transform: "scale(1)"}));
+  useEffect(()=> {
+    transformApi.start({transform: `scale(${justCollided ? '1.3' : '1'})`, immediate: justCollided})
+    if (!justCollided) return;
+    functions.updateInstance(id, {justCollided: false})
+  }, [justCollided])
 
 
   const bind = useDrag(({ active, first, last, xy, offset: [x, y] }) => {
@@ -216,7 +222,7 @@ const SoundInstance = ({ id, soundClass, pos, functions }) => {
       if (elems && !elems.some(elem=>elem.id=="pot")) functions.removeInstance(id);
     }
     setDragging(active);
-    api.start({ x, y });
+    posApi.start({ x, y });
     },
     {from: () => [x.get(), y.get()]}
   )
@@ -224,7 +230,7 @@ const SoundInstance = ({ id, soundClass, pos, functions }) => {
 
   return <animated.div {...bind()}
     className={`absolute w-24 h-24 border-8 rounded-full ${borderColor.current} ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none grid place-content-center text-white`}
-    style={{ x, y, zIndex, left: "-48px", top: "-48px" }} >{soundClass}</animated.div>
+    style={{ x, y, zIndex, left: "-48px", top: "-48px", transform }} >{soundClass}</animated.div>
 }
 
 
