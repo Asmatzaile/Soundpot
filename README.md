@@ -15,6 +15,7 @@ While in the pot:
 - The concept of [Sound Object](https://monoskop.org/images/0/01/Chion_Michel_Guide_To_Sound_Objects_Pierre_Schaeffer_and_Musical_Research.pdf), coined by Pierre Schaeffer in 1966.
 - [Little Alchemy](https://littlealchemy.com/) by Jakub Koziol (2010)[^1]
 - [Infinite Craft](https://neal.fun/infinite-craft/) by Neal Agarwal (2024)
+- An explanation about generating music with agents where one of them emits waves and others play a sound when they receive them. I remember reading it in the past but I can't find it now :(
 
 [^1]: Although I got to know Little Alchemy first, [Doodle God](https://store.steampowered.com/app/348360/Doodle_God/) by JoyBits was released some months before on 2010.
 

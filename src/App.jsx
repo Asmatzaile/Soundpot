@@ -90,11 +90,71 @@ const Library = ({ soundClasses }) => {
 }
 
 const Pot = ({ soundInstances }) => {
+  const [lastRippleKey, setLastRippleKey] = useState(-1);
+  const getNewRippleKey = () => {
+    const newRippleKey = lastRippleKey + 1;
+    setLastRippleKey(newRippleKey);
+    return newRippleKey;
+  }
+  const [ripplesData, setRipplesData] = useState(new Map());
+  const [maxRippleSize, setMaxRippleSize] = useState();
+  const addRipple = (rippleData) => {
+    const key = getNewRippleKey();
+    setRipplesData(new Map(ripplesData.set(key, rippleData)));
+  }
+  const removeRipple = (key) => {
+    ripplesData.delete(key);
+    setRipplesData(new Map(ripplesData));
+  }
+
+  const potRef = useRef(null);
+  useEffect(()=> {
+    const { width, height } = potRef.current.getBoundingClientRect();
+    setMaxRippleSize(Math.sqrt(width**2 + height**2) * 2);
+  }, []);
+
+  const handlePointerDown = (e) => {
+    if (e.target === potRef.current) addRipple({pos:{x:e.offsetX, y:e.offsetY}})
+  }
+  useEffect(() => {
+    potRef.current.addEventListener("pointerdown", handlePointerDown);
+    return () => potRef.current.removeEventListener("pointerdown", handlePointerDown)
+  }, [ripplesData])
+
+  const ripples = [...ripplesData.entries()].map(([key, data]) => <Ripple key={key} {...data} destroy={() => removeRipple(key)} maxSize={maxRippleSize} />)
   return(
-    <div id="pot" className="bg-stone-900">
+    <div id="pot" ref={potRef} className="bg-stone-900">
+      <div id="ripple-container" className="overflow-hidden relative size-full pointer-events-none">
+          {ripples}
+      </div>
       {soundInstances}
     </div>
   )
+}
+
+// it would probably be more performant to draw them on a canvas
+const Ripple = ({maxSize, pos, destroy}) => {
+  const onRestRef = useRef(null);
+
+  const [{size}, api] = useSpring(
+    () => ({
+      from: { size: 10 },
+      to: { size: maxSize },
+      config: {
+        duration: 3000,
+      },
+      onRest: () => onRestRef?.current(),
+    }),
+  )
+  // needed because Spring memoizes everything
+  useEffect(()=> {
+    onRestRef.current = () => destroy();
+  }, [destroy]);
+
+  useEffect(()=>{api.start()});
+  return <animated.div className="border-stone-500 border-2 rounded-full absolute pointer-events-none"
+  style={{transform: "translate(-50%, -50%)", left:pos.x, top:pos.y, width:size, height:size, color:"white"}}
+  ></animated.div>
 }
 
 const borderColorNames = ['border-red-400', 'border-orange-400', 'border-amber-400', 'border-yellow-400', 'border-lime-400', 'border-green-400', 'border-emerald-400', 'border-teal-400', 'border-cyan-400', 'border-sky-400', 'border-blue-400', 'border-indigo-400', 'border-violet-400', 'border-purple-400', 'border-fuchsia-400', 'border-pink-400', 'border-rose-400'];
