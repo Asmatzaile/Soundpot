@@ -6,7 +6,7 @@
   "scripts": {
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
     "start:frontend": "cd frontend && npm start",
-    "start:backend": "echo \"Error: no backend script specified\"",
+    "start:backend": "cd backend && fastapi dev main.py",
     "install:frontend": "cd frontend && npm install",
     "install:backend": "conda create -n soundpot -y && eval \"$(conda shell.bash hook)\" && conda activate soundpot && cd backend && pip install -r requirements.txt",
     "get_vae": "eval \"$(conda shell.bash hook)\" && conda activate soundpot && cd backend && python3 get_vae.py"
