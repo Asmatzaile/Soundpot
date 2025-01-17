@@ -1,0 +1,3 @@
+https://github.com/vBaiCai/python-pesq/archive/master.zip
+stable-audio-tools
+fastapi[standard]

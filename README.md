@@ -21,14 +21,21 @@ While in the pot:
 
 ## Running locally
 
-### Requirements
-
-- [Node.js](https://nodejs.org/en)
-
 ### Installation
 
+#### Requirements
+
+- [Node.js](https://nodejs.org/en)
+- [conda](https://anaconda.org/anaconda/conda)
+
+#### Step 1: Install dependencies
+
+Run the following:
+
 ```sh
-npm install && npm run install:frontend
+npm install
+npm run install:frontend
+npm run install:backend
 ```
 
 ### Running
