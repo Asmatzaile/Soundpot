@@ -1,0 +1,15 @@
+{
+  "name": "soundpot",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Soundpot is a playful and accessible musical framework where users can play and combine distinct sound objects.",
+  "scripts": {
+    "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
+    "start:frontend": "cd frontend && npm start",
+    "start:backend": "echo \"Error: no backend script specified\"",
+    "install:frontend": "cd frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

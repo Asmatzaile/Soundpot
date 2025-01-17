@@ -28,11 +28,11 @@ While in the pot:
 ### Installation
 
 ```sh
-npm install
+npm install && npm run install:frontend
 ```
 
 ### Running
 
 ```sh
-npm run dev
+npm start
 ```
