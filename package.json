@@ -8,7 +8,8 @@
     "start:frontend": "cd frontend && npm start",
     "start:backend": "echo \"Error: no backend script specified\"",
     "install:frontend": "cd frontend && npm install",
-    "install:backend": "conda create -n soundpot -y && eval \"$(conda shell.bash hook)\" && conda activate soundpot && cd backend && pip install -r requirements.txt"
+    "install:backend": "conda create -n soundpot -y && eval \"$(conda shell.bash hook)\" && conda activate soundpot && cd backend && pip install -r requirements.txt",
+    "get_vae": "eval \"$(conda shell.bash hook)\" && conda activate soundpot && cd backend && python3 get_vae.py"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

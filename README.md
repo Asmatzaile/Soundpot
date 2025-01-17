@@ -38,6 +38,18 @@ npm run install:frontend
 npm run install:backend
 ```
 
+#### Step 2: Get the Stable Audio Open variational autoencoder
+
+Go to the [Hugging Face repository of Stable Audio Open](https://huggingface.co/stabilityai/stable-audio-open-1.0) and accept the conditions. Sign up if you don't have an account.
+
+Then, [generate an Hugging Face access token](https://huggingface.co/settings/tokens/new?tokenType=read). Give a descriptive name and copy it (starts with `hf_...`).
+
+Lastly, run the following command, replacing `<HF_TOKEN>` with your token:
+
+```sh
+npm run get_vae -- --token=<HF_TOKEN>
+```
+
 ### Running
 
 ```sh
