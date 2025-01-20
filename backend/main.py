@@ -2,6 +2,7 @@ import io
 import json
 from pathlib import Path
 import uvicorn
+import logging
 
 import numpy as np
 import torch
@@ -14,6 +15,8 @@ from pydantic import BaseModel
 from stable_audio_tools.models.factory import create_model_from_config
 from stable_audio_tools.models.utils import load_ckpt_state_dict
 from stable_audio_tools.training.utils import copy_state_dict
+
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 
 app = FastAPI()
 
@@ -41,6 +44,7 @@ def load_model():
         vae = create_model_from_config(config)
         copy_state_dict(vae, load_ckpt_state_dict(str(checkpoint_path)))
         MODEL = vae.to(DEVICE).eval().requires_grad_(False)
+        logging.info("Model loaded.")
     return MODEL
 
 
@@ -149,5 +153,7 @@ async def interpolate_audio(
 if __name__ == "__main__":
     with open('../config.json') as f:
         config = json.load(f)
+
+    logging.info(f"Tensor computations will run on the device {DEVICE}")
 
     uvicorn.run("main:app", host="0.0.0.0", port=config["backend_port"], reload=True)
