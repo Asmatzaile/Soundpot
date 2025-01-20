@@ -1,8 +1,10 @@
+import os
 import io
-import json
 from pathlib import Path
-import uvicorn
+import json
 import logging
+from datetime import datetime
+import uvicorn
 
 import numpy as np
 import torch
@@ -148,11 +150,46 @@ async def interpolate_audio(
         print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
+sounds_folder_path = '../sounds'
+LIBRARY = None
 
+def load_library():
+    global LIBRARY
+    if LIBRARY is not None: return LIBRARY
+    os.makedirs(sounds_folder_path, exist_ok=True) # make the folder if it doesn't exist
+    try:
+        with open(f"{sounds_folder_path}/.library.json") as f:
+            LIBRARY = json.load(f)
+    except:
+        pass
+    found_sounds = []
+    for filename in os.listdir(sounds_folder_path):
+        if filename == ".library.json": continue # skip the library file
+        if not filename.endswith(".wav"):
+            logging.warning(f"File {filename} on sounds folder was not recognized!")
+            continue
+        found_sounds.append(filename)
+        if filename not in LIBRARY:
+            LIBRARY[filename] = {'origin': 'primordial', 'date': datetime.now().isoformat(timespec="seconds")}
+    
+    for filename in list(LIBRARY):
+        if filename in found_sounds: continue
+        logging.warning(f"File \"{filename}\" not found! Removing from library.")
+        LIBRARY.pop(filename)
+
+    return LIBRARY
+
+def save_library():
+    global LIBRARY
+    with open(f"{sounds_folder_path}/.library.json", "w", encoding="utf-8") as f:
+        json.dump(LIBRARY, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     with open('../config.json') as f:
         config = json.load(f)
+
+    load_library()
+    save_library()
 
     logging.info(f"Tensor computations will run on the device {DEVICE}")
 

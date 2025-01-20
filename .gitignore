@@ -14,6 +14,9 @@ dist-ssr
 
 __pycache__
 
+# Sound library
+sounds
+
 # Model weights
 *.ckpt
 

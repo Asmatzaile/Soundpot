@@ -50,6 +50,10 @@ Lastly, run the following command, replacing `<HF_TOKEN>` with your token:
 npm run get_vae -- --token=<HF_TOKEN>
 ```
 
+### Adding sounds
+
+To add 'primordial sounds' to the application, put them inside the `sounds` folder.
+
 ### Running
 
 ```sh
