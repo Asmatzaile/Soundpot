@@ -3,6 +3,8 @@ import { useSpring, animated } from '@react-spring/web'
 import { useDrag } from '@use-gesture/react'
 import * as Tone from "tone";
 
+const soundBuffers = new Map();
+
 function App() {
   const [libraryData, setLibraryData] = useState(null);
 
@@ -12,6 +14,17 @@ function App() {
     const reverb = new Tone.Reverb({ wet: 0.5 });
     Tone.getDestination().chain(reverb, compressor);
   }, []);
+
+  useEffect(() => {
+    if (libraryData === null) return;
+    Object.keys(libraryData).forEach(soundName => {
+      if (soundBuffers.has(soundName)) return;
+      console.info(`Loading sound "${soundName}"...`);
+      const buffer = new Tone.ToneAudioBuffer("/api/sounds/" + soundName);
+      buffer.onload = () => console.info(`Sound "${soundName}" loaded!`)
+      soundBuffers.set(soundName, buffer);
+    });  
+  }, [libraryData])
 
   const defaultSoundClassesData = new Map(Object.entries({0: {soundClass: 0}, 1: {soundClass: 1}, 2: {soundClass: 2}, 3: {soundClass: 3}}));
   const [soundClassesData, setSoundClassesData] = useState(defaultSoundClassesData);
@@ -205,11 +218,12 @@ const SoundClass = ( { soundClass, createSoundInstance }) => {
 }
 
 const SoundInstance = ({ id, soundClass, pos, functions, justCollided }) => {
-  const synthRef = useRef(null);
-  const synth = synthRef.current;
+  const playerRef = useRef(null);
+  const player = playerRef.current;
+
   useEffect(() => {
-    synthRef.current = new Tone.Synth().toDestination();    
-    return () => synthRef.current.onsilence = () => synthRef.current.dispose();
+    playerRef.current = new Tone.Player([...soundBuffers.values()][soundClass]).toDestination();   
+    return () => playerRef.current.dispose();
   }, [])
   
   const borderColor = useRef(borderColorNames[soundClass%borderColorNames.length]);
@@ -231,7 +245,7 @@ const SoundInstance = ({ id, soundClass, pos, functions, justCollided }) => {
   useEffect(()=> {
     transformApi.start({transform: `scale(${justCollided ? '1.3' : '1'})`, immediate: justCollided})
     if (!justCollided) return;
-    synth?.triggerAttackRelease(Tone.Frequency(soundClass + 48, "midi").toFrequency(), "8n");
+    player?.start();
     functions.updateInstance(id, {justCollided: false})
   }, [justCollided])
 
