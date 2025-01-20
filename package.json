@@ -6,10 +6,10 @@
   "scripts": {
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
     "start:frontend": "cd frontend && npm start",
-    "start:backend": "cd backend && fastapi dev main.py",
+    "start:backend": "cd backend && conda run --no-capture-output -n soundpot python3 main.py",
     "install:frontend": "cd frontend && npm install",
-    "install:backend": "conda create -n soundpot -y && eval \"$(conda shell.bash hook)\" && conda activate soundpot && cd backend && pip install -r requirements.txt",
-    "get_vae": "eval \"$(conda shell.bash hook)\" && conda activate soundpot && cd backend && python3 get_vae.py"
+    "install:backend": "conda create -n soundpot -y && cd backend && conda run --no-capture-output -n soundpot pip install -r requirements.txt",
+    "get_vae": "cd backend && conda run --no-capture-output -n soundpot python3 get_vae.py"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
