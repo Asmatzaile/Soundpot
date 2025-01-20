@@ -4,7 +4,10 @@ import { useDrag } from '@use-gesture/react'
 import * as Tone from "tone";
 
 function App() {
-  useEffect(()=> {
+  const [libraryData, setLibraryData] = useState(null);
+
+  useEffect(()=> { // init script
+    ( async () => setLibraryData(await getLibraryData()) )();
     const compressor = new Tone.Compressor()
     const reverb = new Tone.Reverb({ wet: 0.5 });
     Tone.getDestination().chain(reverb, compressor);
@@ -12,13 +15,17 @@ function App() {
 
   const defaultSoundClassesData = new Map(Object.entries({0: {soundClass: 0}, 1: {soundClass: 1}, 2: {soundClass: 2}, 3: {soundClass: 3}}));
   const [soundClassesData, setSoundClassesData] = useState(defaultSoundClassesData);
+  const [soundInstancesData, setSoundInstancesData] = useState(new Map());
+  
+  const loaded = libraryData !== null
+  if (!loaded) return <main className="min-h-dvh grid place-content-center" >Loading...</main>
+
 
   const addSoundClass = (classData) => {
     const key = Math.max(...soundClassesData.keys(), -1) + 1;
     setSoundClassesData(new Map(soundClassesData.set(key, classData)));
   }
 
-  const [soundInstancesData, setSoundInstancesData] = useState(new Map());
   const addSoundInstance = (instanceData) => {
     const key = Math.max(...soundInstancesData.keys(), -1) + 1;
     setSoundInstancesData(new Map(soundInstancesData.set(key, instanceData)));
@@ -248,6 +255,18 @@ const SoundInstance = ({ id, soundClass, pos, functions, justCollided }) => {
     style={{ x, y, zIndex, left: "-48px", top: "-48px", transform }} >{soundClass}</animated.div>
 }
 
+
+const getLibraryData = async () => {
+  while(true) {
+    try {
+      const response = await fetch("/api/library/");
+      if (response.ok) return await response.json();
+      throw new Error('Response was not ok');
+    } catch (error) {
+      await new Promise(resolve => setTimeout(resolve, 500)); // check every 500 ms
+    }
+  }
+}
 
 const getElementCenter = (element) => {
   const rect = element.getBoundingClientRect();
