@@ -153,6 +153,12 @@ async def interpolate_audio(
 sounds_folder_path = '../sounds'
 LIBRARY = None
 
+app.mount("/sounds/", StaticFiles(directory=sounds_folder_path)) # special characters on the filename need to addressed by the client in their requests request
+
+@app.get("/library/")
+async def serve_library():
+    return load_library()
+
 def load_library():
     global LIBRARY
     if LIBRARY is not None: return LIBRARY
