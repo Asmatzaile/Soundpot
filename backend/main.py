@@ -1,6 +1,7 @@
 import io
 import json
 from pathlib import Path
+import uvicorn
 
 import numpy as np
 import torch
@@ -146,6 +147,7 @@ async def interpolate_audio(
 
 
 if __name__ == "__main__":
-    import uvicorn
+    with open('../config.json') as f:
+        config = json.load(f)
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=config["backend_port"], reload=True)
