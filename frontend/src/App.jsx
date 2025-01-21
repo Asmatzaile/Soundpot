@@ -23,21 +23,17 @@ function App() {
       const buffer = new Tone.ToneAudioBuffer("/api/sounds/" + soundName);
       buffer.onload = () => console.info(`Sound "${soundName}" loaded!`)
       soundBuffers.set(soundName, buffer);
-    });  
+    });
+    setSoundClassesData(new Map(Object.entries(libraryData)));
   }, [libraryData])
 
-  const defaultSoundClassesData = new Map(Object.entries({0: {soundClass: 0}, 1: {soundClass: 1}, 2: {soundClass: 2}, 3: {soundClass: 3}}));
-  const [soundClassesData, setSoundClassesData] = useState(defaultSoundClassesData);
+  const [soundClassesData, setSoundClassesData] = useState(new Map());
   const [soundInstancesData, setSoundInstancesData] = useState(new Map());
   
   const loaded = libraryData !== null
   if (!loaded) return <main className="min-h-dvh grid place-content-center" >Loading...</main>
 
 
-  const addSoundClass = (classData) => {
-    const key = Math.max(...soundClassesData.keys(), -1) + 1;
-    setSoundClassesData(new Map(soundClassesData.set(key, classData)));
-  }
 
   const addSoundInstance = (instanceData) => {
     const key = Math.max(...soundInstancesData.keys(), -1) + 1;
@@ -47,20 +43,21 @@ function App() {
     soundInstancesData.delete(key);
     setSoundInstancesData(new Map(soundInstancesData));
   }
-  const mergeSoundInstances = (key1, key2) => {
+  const mergeSoundInstances = async (key1, key2) => {
     const {soundClass: soundClass1, pos: pos1} = soundInstancesData.get(key1);
     const {soundClass: soundClass2, pos: pos2} = soundInstancesData.get(key2);
 
-    const soundClass = soundClass1 + soundClass2;
-    const pos = {x: (pos1.x + pos2.x) / 2, y: (pos1.y + pos2.y) / 2};
-    addSoundInstance({soundClass, pos});
-
-    if (![...soundClassesData.values()].some(classData => classData.soundClass === soundClass)) {
-      addSoundClass({soundClass: soundClass});
-    }
-
     removeSoundInstance(key1);
     removeSoundInstance(key2);
+
+    const newSoundInfo = await getMergedSoundsData(soundClass1, soundClass2);
+    const [newSoundClass, newSoundData] = Object.entries(newSoundInfo)[0] ;
+    const pos = {x: (pos1.x + pos2.x) / 2, y: (pos1.y + pos2.y) / 2};
+    addSoundInstance({soundClass: newSoundClass, pos});
+
+    const newLibraryData = ({...libraryData})
+    newLibraryData[newSoundClass] = newSoundData;
+    setLibraryData(newLibraryData)
   }
 
   return (
@@ -72,7 +69,7 @@ function App() {
 }
 
 const Library = ({ soundClassesData, addSoundInstance }) => {
-  const soundClasses = [...soundClassesData.entries()].map(([key, {soundClass}]) => <SoundClass key={key} soundClass={soundClass} createSoundInstance={(pos)=>addSoundInstance({soundClass, pos})} />);
+  const soundClasses = [...soundClassesData.entries()].map(([soundClass, {soundClassData}]) => <SoundClass key={soundClass} soundClass={soundClass} createSoundInstance={(pos)=>addSoundInstance({soundClass, pos})} />);
 
   return (
     <div id="library" className="bg-stone-800 p-4 grid grid-cols-[repeat(auto-fill,_minmax(64px,_1fr))] content-start place-items-center gap-4">
@@ -222,7 +219,7 @@ const SoundInstance = ({ id, soundClass, pos, functions, justCollided }) => {
   const player = playerRef.current;
 
   useEffect(() => {
-    playerRef.current = new Tone.Player([...soundBuffers.values()][soundClass]).toDestination();   
+    playerRef.current = new Tone.Player(soundBuffers.get(soundClass)).toDestination();
     return () => playerRef.current.dispose();
   }, [])
   
@@ -280,6 +277,17 @@ const getLibraryData = async () => {
       await new Promise(resolve => setTimeout(resolve, 500)); // check every 500 ms
     }
   }
+}
+
+const getMergedSoundsData = async (filename1, filename2) => {
+  const formData = new FormData();
+  formData.append("filename1", filename1);
+  formData.append("filename2", filename2);
+  const response = await fetch("/api/merge/", {
+    method: "POST",
+    body: formData,
+  })
+  return await response.json();
 }
 
 const getElementCenter = (element) => {
