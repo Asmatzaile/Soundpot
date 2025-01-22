@@ -5,6 +5,7 @@ import json
 import logging
 from datetime import datetime
 import uvicorn
+from contextlib import asynccontextmanager
 
 import numpy as np
 import torch
@@ -20,7 +21,21 @@ from stable_audio_tools.training.utils import copy_state_dict
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logging.debug(f"Loading library...")
+    load_library()
+    save_library()
+    logging.info(f"Library loaded.")
+
+    logging.debug("Loading model...")
+    load_model()
+    logging.info(f"Model loaded. Tensor computations will run on the device {DEVICE}.")
+
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -246,14 +261,4 @@ async def interpolate_sounds(path1, path2, output_path):
 if __name__ == "__main__":
     with open('../config.json') as f:
         config = json.load(f)
-
-    logging.debug(f"Loading library...")
-    load_library()
-    save_library()
-    logging.info(f"Library loaded.")
-
-    logging.debug("Loading model...")
-    load_model()
-    logging.info(f"Model loaded. Tensor computations will run on the device {DEVICE}.")
-
     uvicorn.run("main:app", host="0.0.0.0", port=config["backend_port"], reload=True)
