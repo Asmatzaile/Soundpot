@@ -66,13 +66,19 @@ function App() {
     const [newSoundClass, newSoundData] = Object.entries(newSoundInfo)[0] ;
     // First, load the sound on buffers
     loadBuffers(newSoundClass)
-    // Then, update instance, that can access the new buffer
-    const updatedNewInstance = {...soundInstancesData.get(newInstanceKey), soundClass: newSoundClass};
-    setSoundInstancesData(new Map(soundInstancesData.set(newInstanceKey, updatedNewInstance)));
 
-    const newLibraryData = ({...libraryData})
-    newLibraryData[newSoundClass] = newSoundData;
-    setLibraryData(newLibraryData)
+    // Then, update instance, that can access the new buffer
+    setSoundInstancesData(prev => {
+      const updatedNewInstance = {...prev.get(newInstanceKey), soundClass: newSoundClass};
+      return new Map(prev.set(newInstanceKey, updatedNewInstance))
+    });
+
+    setLibraryData(prev => {
+      const newLibraryData = ({...prev})
+      newLibraryData[newSoundClass] = newSoundData;
+      return newLibraryData;
+    });
+    
   }
 
   return (
