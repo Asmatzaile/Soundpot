@@ -17,15 +17,19 @@ function App() {
 
   useEffect(() => {
     if (libraryData === null) return;
-    Object.keys(libraryData).forEach(soundName => {
+    loadBuffers(...Object.keys(libraryData));
+    setSoundClassesData(new Map(Object.entries(libraryData)));
+  }, [libraryData]);
+
+  const loadBuffers = (...soundNames) => {
+    soundNames.forEach(soundName => {
       if (soundBuffers.has(soundName)) return;
       console.info(`Loading sound "${soundName}"...`);
       const buffer = new Tone.ToneAudioBuffer("/api/sounds/" + soundName);
       buffer.onload = () => console.info(`Sound "${soundName}" loaded!`)
       soundBuffers.set(soundName, buffer);
     });
-    setSoundClassesData(new Map(Object.entries(libraryData)));
-  }, [libraryData])
+  }
 
   const [soundClassesData, setSoundClassesData] = useState(new Map());
   const [soundInstancesData, setSoundInstancesData] = useState(new Map());
@@ -43,6 +47,7 @@ function App() {
   const addSoundInstance = (instanceData) => {
     const key = getNewClassKey();
     setSoundInstancesData(new Map(soundInstancesData.set(key, instanceData)));
+    return key;
   }
   const removeSoundInstance = (key) => {
     soundInstancesData.delete(key);
@@ -54,11 +59,16 @@ function App() {
 
     removeSoundInstance(key1);
     removeSoundInstance(key2);
+    const pos = {x: (pos1.x + pos2.x) / 2, y: (pos1.y + pos2.y) / 2};
+    const newInstanceKey = addSoundInstance({soundClass: undefined, pos});
 
     const newSoundInfo = await getMergedSoundsData(soundClass1, soundClass2);
     const [newSoundClass, newSoundData] = Object.entries(newSoundInfo)[0] ;
-    const pos = {x: (pos1.x + pos2.x) / 2, y: (pos1.y + pos2.y) / 2};
-    addSoundInstance({soundClass: newSoundClass, pos});
+    // First, load the sound on buffers
+    loadBuffers(newSoundClass)
+    // Then, update instance, that can access the new buffer
+    const updatedNewInstance = {...soundInstancesData.get(newInstanceKey), soundClass: newSoundClass};
+    setSoundInstancesData(new Map(soundInstancesData.set(newInstanceKey, updatedNewInstance)));
 
     const newLibraryData = ({...libraryData})
     newLibraryData[newSoundClass] = newSoundData;
@@ -224,9 +234,10 @@ const SoundInstance = ({ id, soundClass, pos, functions, justCollided }) => {
   const player = playerRef.current;
 
   useEffect(() => {
+    if (soundClass === undefined) return () => undefined;
     playerRef.current = new Tone.Player(soundBuffers.get(soundClass)).toDestination();
     return () => playerRef.current.dispose();
-  }, [])
+  }, [soundClass])
   
   const borderColor = useRef(borderColorNames[soundClass%borderColorNames.length]);
   const [zIndex, setZIndex] = useState(0);
