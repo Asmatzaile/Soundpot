@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSpring, animated } from '@react-spring/web'
+import { useSpring, animated, useTransition } from '@react-spring/web'
 import { useDrag } from '@use-gesture/react'
 import * as Tone from "tone";
 
@@ -173,14 +173,29 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
     return () => potRef.current.removeEventListener("pointerdown", handlePointerDown)
   }, [ripplesData])
 
+  const transitions = useTransition([...soundInstancesData.entries()], {
+    keys: (item) => item[0],
+    from: { opacity: 0, transform: "scale(0.3)" },
+    enter: { opacity: 1, transform: "scale(1)" },
+    leave: { opacity: 0, transform: "scale(0.3)" },
+    config: {
+      tension: 300,
+    }
+  });
+
   const ripples = [...ripplesData.entries()].map(([key, data]) => <Ripple key={key} id={key} {...data} functions={rippleFunctions} />)
-  const soundInstances = [...soundInstancesData.entries()].map(([key, instanceData]) => <SoundInstance key={key} id={key} functions={instanceFunctions} {...instanceData} />);
   return(
     <div id="pot" ref={potRef} className="bg-stone-900">
       <div id="ripple-container" className="overflow-hidden relative size-full pointer-events-none">
           {ripples}
       </div>
-      {soundInstances}
+      {transitions((style, [key, instanceData]) =>
+      {
+        return(
+        <animated.div style={{...style, x: instanceData.pos.x, y: instanceData.pos.y}} key={key} className="absolute top-0 left-0">
+          <SoundInstance key={key} id={key} functions={instanceFunctions} {...instanceData} isDisposed={!soundInstancesData.has(key)}/>
+        </animated.div>
+      )})}
     </div>
   )
 }
@@ -235,15 +250,16 @@ const SoundClass = ( { soundClass, createSoundInstance }) => {
   )
 }
 
-const SoundInstance = ({ id, soundClass, pos, functions, justCollided }) => {
+const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollided }) => {
   const playerRef = useRef(null);
   const player = playerRef.current;
 
   useEffect(() => {
     if (soundClass === undefined) return () => undefined;
     playerRef.current = new Tone.Player(soundBuffers.get(soundClass)).toDestination();
-    return () => playerRef.current.dispose();
+    return () => playerRef.current?.dispose();
   }, [soundClass])
+  if (isDisposed) playerRef.current?.stop()
   
   const borderColor = useRef(borderColorNames[soundClass%borderColorNames.length]);
   const [zIndex, setZIndex] = useState(0);
@@ -255,10 +271,11 @@ const SoundInstance = ({ id, soundClass, pos, functions, justCollided }) => {
   // needed because Spring memoizes everything
   useEffect(()=> {
     onChangeRef.current = () => {
+      if (isDisposed) return;
       functions.updateInstance(id, {pos: {x: x.get(), y: y.get()}});
       if (!dragging) functions.checkMerges(id);
     }
-  }, [dragging, functions]) // functions is also a dep cause it relies on current values of soundInstancesData
+  }, [dragging, functions, isDisposed]) // functions is also a dep cause it relies on current values of soundInstancesData
 
   const [{ transform }, transformApi] = useSpring(() => ({transform: "scale(1)"}));
   useEffect(()=> {
@@ -271,7 +288,7 @@ const SoundInstance = ({ id, soundClass, pos, functions, justCollided }) => {
 
   const bind = useDrag(({ active, first, last, xy, offset: [x, y] }) => {
     if (first) setZIndex(functions.getHigherZIndex(zIndex));
-    if (last) {
+    if (last && !isDisposed) {
       functions.checkMerges(id);
       const elems = document.elementsFromPoint(xy[0], xy[1]); // thanks https://github.com/pmndrs/use-gesture/issues/88#issuecomment-1154734405
       if (elems && !elems.some(elem=>elem.id=="pot")) functions.removeInstance(id);
@@ -285,7 +302,7 @@ const SoundInstance = ({ id, soundClass, pos, functions, justCollided }) => {
 
   return <animated.div {...bind()}
     className={`absolute w-24 h-24 border-8 rounded-full ${borderColor.current} ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none grid place-content-center text-white`}
-    style={{ x, y, zIndex, left: "-48px", top: "-48px", transform }} >{soundClass}</animated.div>
+    style={{ zIndex, left: "-48px", top: "-48px", transform }} >{soundClass}</animated.div>
 }
 
 
