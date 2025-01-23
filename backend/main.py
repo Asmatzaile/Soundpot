@@ -7,6 +7,8 @@ from datetime import datetime
 import uvicorn
 from contextlib import asynccontextmanager
 
+from pydub import AudioSegment
+
 import numpy as np
 import torch
 import torchaudio
@@ -233,6 +235,18 @@ async def merge_sounds(filename1 : str = Form(...), filename2 : str = Form(...))
     LIBRARY[output_filename] = soundData
     save_library()
     return {output_filename: soundData}
+
+@app.post("/upload_recording/")
+async def add_recording(recording = File(...)):
+    filename = get_new_sound_name()
+    content = await recording.read()
+    buffer = io.BytesIO(content)
+    audio = AudioSegment.from_file(buffer)
+    audio.export(sounds_folder_path+"/"+filename, format="wav")
+    soundData = {'origin': 'recording', 'date': datetime.now().isoformat(timespec="seconds")}
+    LIBRARY[filename] = soundData
+    save_library()
+    return {filename: soundData}
 
 async def interpolate_sounds(path1, path2, output_path):
     tensor1 = await get_tensor_of_audio(path1)

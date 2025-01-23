@@ -5,7 +5,7 @@ import * as Tone from "tone";
 import { dispatchPointerEvent, getElementCenter, isSelectorInPoint } from './utils/dom';
 import { doCirclesCollide, isCircleInCircle } from './utils/math';
 import { getBorderColor } from './utils/misc';
-import { getLibraryData, getMergedSoundsData } from './api';
+import { getLibraryData, getMergedSoundsData, uploadRecording } from './api';
 
 const soundBuffers = new Map();
 
@@ -108,16 +108,70 @@ function App() {
   return (
     <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
       <Pot soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} removeSoundInstance={removeSoundInstance} mergeSoundInstances={mergeSoundInstances} addOnLoadListener={addOnLoadListener} />
-      <Library soundClassesData={soundClassesData} addSoundInstance={addSoundInstance} />
+      <Sidebar soundClassesData={soundClassesData} addSoundInstance={addSoundInstance} setLibraryData={setLibraryData} />
     </main>
   )
+}
+
+const Sidebar = ({soundClassesData, addSoundInstance, setLibraryData}) => {
+  return <div className="bg-stone-800 flex flex-col max-h-dvh">
+    <Library soundClassesData={soundClassesData} addSoundInstance={addSoundInstance} />
+    <Recorder setLibraryData={setLibraryData} />
+  </div>
+}
+
+const Recorder = ({ setLibraryData }) => {
+  const [recording, setRecording] = useState(false);
+
+  const recorderRef = useRef(null);
+  const recorder = recorderRef.current;
+  const micRef = useRef(null);
+  const mic = micRef.current;
+  useEffect(() => {
+    const mic = new Tone.UserMedia();
+    const recorder = new Tone.Recorder();
+    mic.connect(recorder);
+    mic.open();
+    micRef.current = mic;
+    recorderRef.current = recorder;
+    return () => {
+      mic.disconnect();
+      recorder.dispose();
+    }
+  }, [])
+
+  const saveRecording = async () => {
+    setRecording(false);
+    const recording = await recorder.stop();
+    const newSoundInfo = await uploadRecording(recording);
+    const [newSoundClass, newSoundData] = Object.entries(newSoundInfo)[0] ;
+    setLibraryData(prev => {
+      const newLibraryData = ({...prev})
+      newLibraryData[newSoundClass] = newSoundData;
+      return newLibraryData;
+    });
+  }
+
+  const startRecording = async () => {
+    mic.open().then(() => {
+      setRecording(true);
+      recorder.start();
+    }).catch(e => console.warn("User doesn't have mic or didn't allow access"));
+  }
+
+  const bind = useDrag(({ first, last }) => {
+    if (first) startRecording();
+    if (last) saveRecording();
+  }) 
+
+  return <div {...bind()} className={`${recording? "bg-red-500" : "bg-stone-700"} h-16 touch-none cursor-pointer`}/>
 }
 
 const Library = ({ soundClassesData, addSoundInstance }) => {
   const soundClasses = [...soundClassesData.entries()].map(([soundClass, {soundClassData}]) => <SoundClass key={soundClass} soundClass={soundClass} addSoundInstance={addSoundInstance} />);
 
   return (
-    <div id="library" className="bg-stone-800 p-4 grid grid-cols-[repeat(auto-fill,_minmax(64px,_1fr))] content-start place-items-center gap-4 overflow-auto">
+    <div id="library" className="p-4 grid grid-cols-[repeat(auto-fill,_minmax(64px,_1fr))] content-start place-items-center gap-4 overflow-auto flex-auto">
       {soundClasses}
     </div>
   )

@@ -21,3 +21,13 @@ export const getMergedSoundsData = async (filename1, filename2) => {
     if (response.ok) return await response.json();
     return undefined;
 }
+
+export const uploadRecording = async (recording) => {
+    const recordingData = new FormData();
+    recordingData.append("recording", recording);
+    const response = await fetch("/api/upload_recording/", {
+        method: "POST",
+        body: recordingData,
+    })
+    return await response.json();
+}

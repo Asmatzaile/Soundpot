@@ -27,6 +27,7 @@ While in the pot:
 
 - [Node.js](https://nodejs.org/en)
 - [conda](https://anaconda.org/anaconda/conda)
+- [FFmpeg](https://www.ffmpeg.org)
 
 #### Step 1: Install dependencies
 
