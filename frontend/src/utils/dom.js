@@ -22,3 +22,8 @@ export const getElementCenter = (element) => {
     const centerY = rect.top + rect.height / 2;
     return {x: centerX, y: centerY}
 }
+
+export const isSelectorInPoint = (selector, {x, y}) => {
+    const elems = document.elementsFromPoint(x, y) // thanks https://github.com/pmndrs/use-gesture/issues/88#issuecomment-1154734405
+    return elems && elems.some(elem=>elem.matches(selector));
+}

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSpring, animated, useTransition } from '@react-spring/web'
 import { useDrag } from '@use-gesture/react'
 import * as Tone from "tone";
-import { dispatchPointerEvent, getElementCenter } from './utils/dom';
+import { dispatchPointerEvent, getElementCenter, isSelectorInPoint } from './utils/dom';
 import { doCirclesCollide, isCircleInCircle } from './utils/math';
 import { getBorderColor } from './utils/misc';
 
@@ -288,8 +288,7 @@ const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollide
     if (first) setZIndex(functions.getHigherZIndex(zIndex));
     if (last && !isDisposed) {
       functions.checkMerges(id);
-      const elems = document.elementsFromPoint(xy[0], xy[1]); // thanks https://github.com/pmndrs/use-gesture/issues/88#issuecomment-1154734405
-      if (elems && !elems.some(elem=>elem.id=="pot")) functions.removeInstance(id);
+      if (!isSelectorInPoint("#pot", {x: xy[0], y: xy[1]})) functions.removeInstance(id);
     }
     setDragging(active);
     posApi.start({ x, y });
