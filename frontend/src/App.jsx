@@ -67,6 +67,8 @@ function App() {
     const newInstanceKey = addSoundInstance({soundClass: undefined, pos});
 
     const newSoundInfo = await getMergedSoundsData(soundClass1, soundClass2);
+    if (!newSoundInfo) return removeSoundInstance(newInstanceKey); // if there was an error, abort
+
     const [newSoundClass, newSoundData] = Object.entries(newSoundInfo)[0] ;
     // First, load the sound on buffers
     loadBuffers(newSoundClass)

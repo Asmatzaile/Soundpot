@@ -18,5 +18,6 @@ export const getMergedSoundsData = async (filename1, filename2) => {
         method: "POST",
         body: formData,
     })
-    return await response.json();
+    if (response.ok) return await response.json();
+    return undefined;
 }
