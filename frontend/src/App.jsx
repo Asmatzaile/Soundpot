@@ -261,6 +261,9 @@ const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollide
   if (isDisposed) playerRef.current?.stop()
   
   const borderColor = useRef(getBorderColor(soundClass));
+  useEffect(() => {
+    borderColor.current = getBorderColor(soundClass);
+  }, [soundClass])
   const [zIndex, setZIndex] = useState(0);
 
   const [dragging, setDragging] = useState(false)
