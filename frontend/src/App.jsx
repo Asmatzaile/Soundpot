@@ -90,7 +90,7 @@ function App() {
 }
 
 const Library = ({ soundClassesData, addSoundInstance }) => {
-  const soundClasses = [...soundClassesData.entries()].map(([soundClass, {soundClassData}]) => <SoundClass key={soundClass} soundClass={soundClass} createSoundInstance={(pos)=>addSoundInstance({soundClass, pos})} />);
+  const soundClasses = [...soundClassesData.entries()].map(([soundClass, {soundClassData}]) => <SoundClass key={soundClass} soundClass={soundClass} addSoundInstance={addSoundInstance} />);
 
   return (
     <div id="library" className="bg-stone-800 p-4 grid grid-cols-[repeat(auto-fill,_minmax(64px,_1fr))] content-start place-items-center gap-4">
@@ -234,13 +234,13 @@ const getBorderColor = () => {
  return borderColorNames[Math.floor(Math.random()*borderColorNames.length)];
 }
 
-const SoundClass = ( { soundClass, createSoundInstance }) => {
+const SoundClass = ( { soundClass, addSoundInstance }) => {
   const divRef = useRef(null);
   const borderColor = useRef(borderColorNames[soundClass%borderColorNames.length]);
 
   const handlePointerDown = (e) => {
-    createSoundInstance({x: getElementCenter(divRef.current).x, y: getElementCenter(divRef.current).y});
-    setTimeout(() => createPointerDownEvent(e.clientX, e.clientY), 1); // we simulate a pointerdown event so that the created instance is taken up
+    const pos = {x: getElementCenter(divRef.current).x, y: getElementCenter(divRef.current).y}
+    addSoundInstance({soundClass, pos, creationEvent: e});
   }
 
   return (
@@ -250,7 +250,7 @@ const SoundClass = ( { soundClass, createSoundInstance }) => {
   )
 }
 
-const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollided }) => {
+const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollided, creationEvent }) => {
   const playerRef = useRef(null);
   const player = playerRef.current;
 
@@ -299,8 +299,13 @@ const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollide
     {from: () => [x.get(), y.get()]}
   )
 
+  const divRef = useRef(null);
+  useEffect(() => {
+    if (!creationEvent) return;
+    dispatchPointerEvent(divRef.current, creationEvent)
+  }, [])
 
-  return <animated.div {...bind()}
+  return <animated.div {...bind()} ref={divRef}
     className={`absolute w-24 h-24 border-8 rounded-full ${borderColor.current} ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none grid place-content-center text-white`}
     style={{ zIndex, left: "-48px", top: "-48px", transform }} >{soundClass}</animated.div>
 }
@@ -336,10 +341,22 @@ const getElementCenter = (element) => {
   return {x: centerX, y: centerY}
 }
 
-const createPointerDownEvent = (mx, my) => {
-    const el = document.elementFromPoint(mx, my);
-    const pointerEvent = new PointerEvent("pointerdown", {buttons: 1, clientX: mx, clientY: my, bubbles:true})
-    el.dispatchEvent(pointerEvent);
+const dispatchPointerEvent = (target, e) => {
+    const clonedEvent = new PointerEvent(e.type, {
+      bubbles: e.bubbles,
+      cancelable: e.cancelable,
+      composed: e.composed,
+      details: e.detail,
+      clientX: e.clientX,
+      clientY: e.clientY,
+      button: e.button,
+      buttons: e.buttons,
+      isPrimary: e.isPrimary,
+      pointerId: e.pointerId,
+      pointerType: e.pointerType,
+      pressure: e.pressure,
+    })
+    target.dispatchEvent(clonedEvent);
 }
 
 // https://www.jeffreythompson.org/collision-detection/circle-circle.php
