@@ -140,8 +140,10 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
     checkMerges: (key) => {
       const pos = soundInstancesData.get(key).pos;
       const collidingKey = [...soundInstancesData.keys()].find(candidateKey => {
+        if (soundInstancesData.get(candidateKey).isBusy) return false;
+        if (key === candidateKey) return false;
         const candidatePos = soundInstancesData.get(candidateKey).pos;
-        return key != candidateKey && doCirclesCollide(pos.x, pos.y, 48, candidatePos.x, candidatePos.y, 48);
+        return doCirclesCollide(pos.x, pos.y, 48, candidatePos.x, candidatePos.y, 48);
       });
       if (collidingKey !== undefined) mergeSoundInstances(key, collidingKey)
     },
@@ -171,16 +173,20 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
   }
 
   const checkRippleCollisions = (rippleData) => {
-    rippleData.collidedWith ??= []; // make sure the previous collision array exists
+    rippleData.collidedWith ??= new Set(); // make sure the previous collision array exists
 
     [...soundInstancesData.entries()].forEach(([instanceKey, instanceData])=> {
       const {pos: ripplePos, size: rippleSize} = rippleData;
-      if (rippleData.collidedWith.includes(instanceKey)) return; // only care about new collisions
+      if (instanceData.isBusy) {
+        rippleData.collidedWith.delete(instanceKey); // that way it can collide again if put up + down 
+        return; // don't collide with busy instances (dragging / loading)
+      }
+      if (rippleData.collidedWith.has(instanceKey)) return; // only care about new collisions
       if (!doCirclesCollide(ripplePos.x, ripplePos.y, rippleSize/2, instanceData.pos.x, instanceData.pos.y, 48)) return;
       if (rippleSize/2 > 48 && isCircleInCircle(ripplePos.x, ripplePos.y, rippleSize/2, instanceData.pos.x, instanceData.pos.y, 48)) return; // don't account for when perimeters aren't touching
       const newInstanceData = {...soundInstancesData.get(instanceKey), justCollided: true};
       setSoundInstancesData(new Map(soundInstancesData.set(instanceKey, newInstanceData)));
-      rippleData.collidedWith.push(instanceKey)
+      rippleData.collidedWith.add(instanceKey)
     });
   }
 
@@ -275,11 +281,17 @@ const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollide
   const player = playerRef.current;
 
   const [loaded, setLoaded] = useState(false)
+  const [dragging, setDragging] = useState(false)
 
   const loadPlayer = (buffer) => {
     playerRef.current = new Tone.Player(buffer).toDestination();
     setLoaded(true);
   }
+
+  useEffect(() => {
+    if (isDisposed) return;
+    functions.updateInstance(id, {isBusy: !loaded || dragging});
+  }, [loaded, dragging, isDisposed]);
 
   useEffect(() => {
     if (soundClass === undefined) return () => undefined;
@@ -296,7 +308,6 @@ const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollide
   }, [soundClass])
   const [zIndex, setZIndex] = useState(0);
 
-  const [dragging, setDragging] = useState(false)
   const onChangeRef = useRef(null);
   const [{ x, y }, posApi] = useSpring(() => ({ x: pos.x, y: pos.y, onChange: () => onChangeRef?.current()}))
 
