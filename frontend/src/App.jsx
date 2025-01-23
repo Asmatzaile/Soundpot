@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useSpring, animated, useTransition } from '@react-spring/web'
 import { useDrag } from '@use-gesture/react'
 import * as Tone from "tone";
+import { dispatchPointerEvent, getElementCenter } from './utils/dom';
+import { doCirclesCollide, isCircleInCircle } from './utils/math';
+import { getBorderColor } from './utils/misc';
 
 const soundBuffers = new Map();
 
@@ -229,14 +232,9 @@ const Ripple = ({pos, id, functions}) => {
   ></animated.div>
 }
 
-const borderColorNames = ['border-red-400', 'border-orange-400', 'border-amber-400', 'border-yellow-400', 'border-lime-400', 'border-green-400', 'border-emerald-400', 'border-teal-400', 'border-cyan-400', 'border-sky-400', 'border-blue-400', 'border-indigo-400', 'border-violet-400', 'border-purple-400', 'border-fuchsia-400', 'border-pink-400', 'border-rose-400'];
-const getBorderColor = () => {
- return borderColorNames[Math.floor(Math.random()*borderColorNames.length)];
-}
-
 const SoundClass = ( { soundClass, addSoundInstance }) => {
   const divRef = useRef(null);
-  const borderColor = useRef(borderColorNames[soundClass%borderColorNames.length]);
+  const borderColor = useRef(getBorderColor(soundClass));
 
   const handlePointerDown = (e) => {
     const pos = {x: getElementCenter(divRef.current).x, y: getElementCenter(divRef.current).y}
@@ -261,7 +259,7 @@ const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollide
   }, [soundClass])
   if (isDisposed) playerRef.current?.stop()
   
-  const borderColor = useRef(borderColorNames[soundClass%borderColorNames.length]);
+  const borderColor = useRef(getBorderColor(soundClass));
   const [zIndex, setZIndex] = useState(0);
 
   const [dragging, setDragging] = useState(false)
@@ -332,46 +330,6 @@ const getMergedSoundsData = async (filename1, filename2) => {
     body: formData,
   })
   return await response.json();
-}
-
-const getElementCenter = (element) => {
-  const rect = element.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-  return {x: centerX, y: centerY}
-}
-
-const dispatchPointerEvent = (target, e) => {
-    const clonedEvent = new PointerEvent(e.type, {
-      bubbles: e.bubbles,
-      cancelable: e.cancelable,
-      composed: e.composed,
-      details: e.detail,
-      clientX: e.clientX,
-      clientY: e.clientY,
-      button: e.button,
-      buttons: e.buttons,
-      isPrimary: e.isPrimary,
-      pointerId: e.pointerId,
-      pointerType: e.pointerType,
-      pressure: e.pressure,
-    })
-    target.dispatchEvent(clonedEvent);
-}
-
-// https://www.jeffreythompson.org/collision-detection/circle-circle.php
-const doCirclesCollide = (c1x, c1y, c1r, c2x, c2y, c2r) => {
-  const dx = c2x - c1x;
-  const dy = c2y - c1y;
-  const d = Math.sqrt(dx*dx + dy*dy);
-  return d <= c1r + c2r;
-}
-
-const isCircleInCircle = (c1x, c1y, c1r, c2x, c2y, c2r) => {
-  const dx = c2x - c1x;
-  const dy = c2y - c1y;
-  const d = Math.sqrt(dx*dx + dy*dy);
-  return d < Math.abs(c2r-c1r);
 }
 
 export default App
