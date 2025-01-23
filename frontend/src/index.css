@@ -32,3 +32,21 @@ body {
     background-color: #ffffff;
   }
 }
+
+.loader {
+  width: 60%;
+  height: 60%;
+  border: 8px solid #FFF;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+from {
+    transform: rotate(0deg);
+}
+to {
+    transform: rotate(360deg);
+}
+} 

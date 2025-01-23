@@ -274,8 +274,11 @@ const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollide
   const playerRef = useRef(null);
   const player = playerRef.current;
 
+  const [loaded, setLoaded] = useState(false)
+
   const loadPlayer = (buffer) => {
     playerRef.current = new Tone.Player(buffer).toDestination();
+    setLoaded(true);
   }
 
   useEffect(() => {
@@ -334,8 +337,10 @@ const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollide
   }, [])
 
   return <animated.div {...bind()} ref={divRef}
-    className={`absolute w-24 h-24 border-8 rounded-full ${borderColor.current} ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none grid place-content-center text-white`}
-    style={{ zIndex, left: "-48px", top: "-48px", transform }} >{soundClass}</animated.div>
+    className={`absolute w-24 h-24 border-8 rounded-full ${borderColor.current} ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none flex justify-center items-center text-white`}
+    style={{ zIndex, left: "-48px", top: "-48px", transform }} > {soundClass}
+    {loaded || <div className="loader" />}
+    </animated.div>
 }
 
 export default App
