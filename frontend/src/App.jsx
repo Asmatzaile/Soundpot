@@ -75,6 +75,7 @@ function App() {
 
     // Then, update instance, that can access the new buffer
     setSoundInstancesData(prev => {
+      if (!prev.has(newInstanceKey)) return prev; // Don't try if it was removed while the sound was being created
       const updatedNewInstance = {...prev.get(newInstanceKey), soundClass: newSoundClass};
       return new Map(prev.set(newInstanceKey, updatedNewInstance))
     });
