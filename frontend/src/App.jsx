@@ -153,8 +153,10 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
   const [ripplesData, setRipplesData] = useState(new Map());
   const [maxRippleSize, setMaxRippleSize] = useState();
   const addRipple = (rippleData) => {
-    const key = Math.max(...ripplesData.keys(), -1) + 1;
-    setRipplesData(new Map(ripplesData.set(key, rippleData)));
+    setRipplesData(prev=> {
+      const key = Math.max(...prev.keys(), -1) + 1;
+      return new Map(prev.set(key, rippleData));
+    });
   }
   const removeRipple = (key) => {
     ripplesData.delete(key);
@@ -195,11 +197,23 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
     setMaxRippleSize(Math.sqrt(width**2 + height**2) * 2);
   }
 
+  const createRandomRipple = () => {
+    const { width, height } = potRef.current.getBoundingClientRect();
+    const x = Math.floor(Math.random()*width);
+    const y = Math.floor(Math.random()*height);
+    addRipple({pos:{x, y}});
+  }
+
   const potRef = useRef(null);
+  const intervalRef = useRef(null);
   useEffect(()=> {
     calcMaxRippleSize();
+    intervalRef.current = setInterval(createRandomRipple, 5000);
     window.addEventListener("resize", calcMaxRippleSize);
-    return () => window.removeEventListener("resize", calcMaxRippleSize);
+    return () => {
+      clearInterval(intervalRef.current);
+      window.removeEventListener("resize", calcMaxRippleSize);
+    }
   }, []);
 
   const handlePointerDown = (e) => {
