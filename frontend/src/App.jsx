@@ -86,7 +86,7 @@ function App() {
   }
 
   return (
-    <main className="min-h-dvh grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
+    <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
       <Pot soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} removeSoundInstance={removeSoundInstance} mergeSoundInstances={mergeSoundInstances}/>
       <Library soundClassesData={soundClassesData} addSoundInstance={addSoundInstance} />
     </main>
@@ -97,7 +97,7 @@ const Library = ({ soundClassesData, addSoundInstance }) => {
   const soundClasses = [...soundClassesData.entries()].map(([soundClass, {soundClassData}]) => <SoundClass key={soundClass} soundClass={soundClass} addSoundInstance={addSoundInstance} />);
 
   return (
-    <div id="library" className="bg-stone-800 p-4 grid grid-cols-[repeat(auto-fill,_minmax(64px,_1fr))] content-start place-items-center gap-4">
+    <div id="library" className="bg-stone-800 p-4 grid grid-cols-[repeat(auto-fill,_minmax(64px,_1fr))] content-start place-items-center gap-4 overflow-auto">
       {soundClasses}
     </div>
   )
