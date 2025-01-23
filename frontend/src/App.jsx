@@ -11,6 +11,7 @@ const soundBuffers = new Map();
 
 function App() {
   const [libraryData, setLibraryData] = useState(null);
+  const [bufferListeners, setBufferListeners] = useState(new Map());
 
   useEffect(()=> { // init script
     ( async () => setLibraryData(await getLibraryData()) )();
@@ -25,12 +26,28 @@ function App() {
     setSoundClassesData(new Map(Object.entries(libraryData)));
   }, [libraryData]);
 
+  const addOnLoadListener = (buffer, listener) => {
+    setBufferListeners(prev => {
+      const listeners = prev.get(buffer) ?? [];
+      listeners.push(listener);
+      buffer.onload = () => {
+        listeners.forEach(fn => fn(buffer));
+        setBufferListeners(prev => {
+          prev.delete(buffer);
+          return new Map(prev);
+        })
+      }
+      prev.set(buffer, listeners);
+      return new Map(prev);
+    })
+  }
+
   const loadBuffers = (...soundNames) => {
     soundNames.forEach(soundName => {
       if (soundBuffers.has(soundName)) return;
       console.info(`Loading sound "${soundName}"...`);
       const buffer = new Tone.ToneAudioBuffer("/api/sounds/" + soundName);
-      buffer.onload = () => console.info(`Sound "${soundName}" loaded!`)
+      addOnLoadListener(buffer, () => console.info(`Sound "${soundName}" loaded!`));
       soundBuffers.set(soundName, buffer);
     });
   }
@@ -90,7 +107,7 @@ function App() {
 
   return (
     <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
-      <Pot soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} removeSoundInstance={removeSoundInstance} mergeSoundInstances={mergeSoundInstances}/>
+      <Pot soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} removeSoundInstance={removeSoundInstance} mergeSoundInstances={mergeSoundInstances} addOnLoadListener={addOnLoadListener} />
       <Library soundClassesData={soundClassesData} addSoundInstance={addSoundInstance} />
     </main>
   )
@@ -106,7 +123,7 @@ const Library = ({ soundClassesData, addSoundInstance }) => {
   )
 }
 
-const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, mergeSoundInstances }) => {
+const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, mergeSoundInstances, addOnLoadListener }) => {
 
   const [highestZIndex, setHighestZIndex] = useState(1);
   const instanceFunctions = {
@@ -127,7 +144,8 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
         return key != candidateKey && doCirclesCollide(pos.x, pos.y, 48, candidatePos.x, candidatePos.y, 48);
       });
       if (collidingKey !== undefined) mergeSoundInstances(key, collidingKey)
-    }
+    },
+    addOnLoadListener: addOnLoadListener,
   }
 
   const [ripplesData, setRipplesData] = useState(new Map());
@@ -256,9 +274,15 @@ const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollide
   const playerRef = useRef(null);
   const player = playerRef.current;
 
+  const loadPlayer = (buffer) => {
+    playerRef.current = new Tone.Player(buffer).toDestination();
+  }
+
   useEffect(() => {
     if (soundClass === undefined) return () => undefined;
-    playerRef.current = new Tone.Player(soundBuffers.get(soundClass)).toDestination();
+    const buffer = soundBuffers.get(soundClass);
+    if (!buffer.loaded) functions.addOnLoadListener(buffer, loadPlayer);
+    else loadPlayer(buffer);
     return () => playerRef.current?.dispose();
   }, [soundClass])
   if (isDisposed) playerRef.current?.stop()
