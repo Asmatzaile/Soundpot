@@ -5,6 +5,7 @@ import * as Tone from "tone";
 import { dispatchPointerEvent, getElementCenter, isSelectorInPoint } from './utils/dom';
 import { doCirclesCollide, isCircleInCircle } from './utils/math';
 import { getBorderColor } from './utils/misc';
+import { getLibraryData, getMergedSoundsData } from './api';
 
 const soundBuffers = new Map();
 
@@ -305,30 +306,6 @@ const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollide
   return <animated.div {...bind()} ref={divRef}
     className={`absolute w-24 h-24 border-8 rounded-full ${borderColor.current} ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none grid place-content-center text-white`}
     style={{ zIndex, left: "-48px", top: "-48px", transform }} >{soundClass}</animated.div>
-}
-
-
-const getLibraryData = async () => {
-  while(true) {
-    try {
-      const response = await fetch("/api/library/");
-      if (response.ok) return await response.json();
-      throw new Error('Response was not ok');
-    } catch (error) {
-      await new Promise(resolve => setTimeout(resolve, 500)); // check every 500 ms
-    }
-  }
-}
-
-const getMergedSoundsData = async (filename1, filename2) => {
-  const formData = new FormData();
-  formData.append("filename1", filename1);
-  formData.append("filename2", filename2);
-  const response = await fetch("/api/merge/", {
-    method: "POST",
-    body: formData,
-  })
-  return await response.json();
 }
 
 export default App
