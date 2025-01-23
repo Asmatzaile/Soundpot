@@ -190,10 +190,16 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
     });
   }
 
-  const potRef = useRef(null);
-  useEffect(()=> {
+  const calcMaxRippleSize = () => {
     const { width, height } = potRef.current.getBoundingClientRect();
     setMaxRippleSize(Math.sqrt(width**2 + height**2) * 2);
+  }
+
+  const potRef = useRef(null);
+  useEffect(()=> {
+    calcMaxRippleSize();
+    window.addEventListener("resize", calcMaxRippleSize);
+    return () => window.removeEventListener("resize", calcMaxRippleSize);
   }, []);
 
   const handlePointerDown = (e) => {
