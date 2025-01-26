@@ -14,18 +14,14 @@ function App() {
   const [bufferListeners, setBufferListeners] = useState(new Map());
 
   useEffect(()=> { // init script
-    ( async () => Object.entries(await getLibraryMetadata()).forEach(([soundName, soundInfo])=> {
-      const soundMetadata = {}
-      soundMetadata[soundName] = soundInfo;
-      addSoundToLibrary(soundMetadata);
-    }) )();
+    ( async () => Object.entries(await getLibraryMetadata()).forEach(soundMetadata=>addSoundToLibrary(soundMetadata)) )();
     const compressor = new Tone.Compressor()
     const reverb = new Tone.Reverb({ wet: 0.5 });
     Tone.getDestination().chain(reverb, compressor);
   }, []);
 
   const addSoundToLibrary = (soundMetadata) => {
-    const [soundName, soundInfo] = Object.entries(soundMetadata)[0];
+    const [soundName, soundInfo] = soundMetadata;
     loadBuffer(soundName);
     setLibrary(prev => {
       prev ??= new Map();
@@ -95,7 +91,7 @@ function App() {
     addSoundToLibrary(newSoundMetadata);
 
     // Then, update instance, that can access the new buffer
-    const newSoundName = Object.keys(newSoundMetadata)[0];
+    const newSoundName = newSoundMetadata[0];
     setSoundInstancesData(prev => {
       if (!prev.has(newInstanceKey)) return prev; // Don't try if it was removed while the sound was being created
       const updatedNewInstance = {...prev.get(newInstanceKey), soundName: newSoundName};

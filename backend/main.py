@@ -233,7 +233,7 @@ async def merge_sounds(filename1 : str = Form(...), filename2 : str = Form(...))
     soundMetadata = {'origin': 'merge', 'parents': [filename1, filename2], 'date': datetime.now().isoformat(timespec="seconds")}
     LIBRARY_METADATA[output_filename] = soundMetadata
     save_library_metadata()
-    return {output_filename: soundMetadata}
+    return [output_filename, soundMetadata]
 
 @app.post("/upload_recording/")
 async def add_recording(recording = File(...)):
@@ -245,7 +245,7 @@ async def add_recording(recording = File(...)):
     soundMetadata = {'origin': 'recording', 'date': datetime.now().isoformat(timespec="seconds")}
     LIBRARY_METADATA[filename] = soundMetadata
     save_library_metadata()
-    return {filename: soundMetadata}
+    return [filename, soundMetadata]
 
 async def interpolate_sounds(path1, path2, output_path):
     tensor1 = await get_tensor_of_audio(path1)
