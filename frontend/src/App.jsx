@@ -10,21 +10,29 @@ import { getLibraryMetadata, getMergedSoundsMetadata, uploadRecording } from './
 const soundBuffers = new Map();
 
 function App() {
-  const [libraryMetadata, setLibraryMetadata] = useState(null);
+  const [library, setLibrary] = useState(null);
   const [bufferListeners, setBufferListeners] = useState(new Map());
 
   useEffect(()=> { // init script
-    ( async () => setLibraryMetadata(await getLibraryMetadata()) )();
+    ( async () => Object.entries(await getLibraryMetadata()).forEach(([soundClass, soundInfo])=> {
+      const soundMetadata = {}
+      soundMetadata[soundClass] = soundInfo;
+      addSoundToLibrary(soundMetadata);
+    }) )();
     const compressor = new Tone.Compressor()
     const reverb = new Tone.Reverb({ wet: 0.5 });
     Tone.getDestination().chain(reverb, compressor);
   }, []);
 
-  useEffect(() => {
-    if (libraryMetadata === null) return;
-    loadBuffers(...Object.keys(libraryMetadata));
-    setSoundClassesData(new Map(Object.entries(libraryMetadata)));
-  }, [libraryMetadata]);
+  const addSoundToLibrary = (soundMetadata) => {
+    const [soundClass, soundInfo] = Object.entries(soundMetadata)[0];
+    loadBuffer(soundClass);
+    setLibrary(prev => {
+      prev ??= new Map();
+      prev.set(soundClass, soundInfo)
+      return new Map(prev);
+    });
+  }
 
   const addOnLoadListener = (buffer, listener) => {
     setBufferListeners(prev => {
@@ -42,17 +50,14 @@ function App() {
     })
   }
 
-  const loadBuffers = (...soundNames) => {
-    soundNames.forEach(soundName => {
-      if (soundBuffers.has(soundName)) return;
-      console.info(`Loading sound "${soundName}"...`);
-      const buffer = new Tone.ToneAudioBuffer("/api/library/" + soundName);
-      addOnLoadListener(buffer, () => console.info(`Sound "${soundName}" loaded!`));
-      soundBuffers.set(soundName, buffer);
-    });
+  const loadBuffer = (soundName) => {
+    if (soundBuffers.has(soundName)) return;
+    console.info(`Loading sound "${soundName}"...`);
+    const buffer = new Tone.ToneAudioBuffer("/api/library/" + soundName);
+    addOnLoadListener(buffer, () => console.info(`Sound "${soundName}" loaded!`));
+    soundBuffers.set(soundName, buffer);
   }
 
-  const [soundClassesData, setSoundClassesData] = useState(new Map());
   const [soundInstancesData, setSoundInstancesData] = useState(new Map());
   
   const [lastInstanceKey, setLastInstanceKey] = useState(-1);
@@ -62,7 +67,7 @@ function App() {
     return newInstanceKey;
   }
 
-  const loaded = libraryMetadata !== null
+  const loaded = library !== null
   if (!loaded) return <main className="min-h-dvh grid place-content-center" >Loading...</main>
 
   const addSoundInstance = (instanceData) => {
@@ -86,21 +91,15 @@ function App() {
     const newSoundMetadata = await getMergedSoundsMetadata(soundClass1, soundClass2);
     if (!newSoundMetadata) return removeSoundInstance(newInstanceKey); // if there was an error, abort
 
-    const [newSoundClass, newSoundInfo] = Object.entries(newSoundMetadata)[0];
-    // First, load the sound on buffers
-    loadBuffers(newSoundClass)
+    // First, add the sound to the library, so that the buffer is loaded
+    addSoundToLibrary(newSoundMetadata);
 
     // Then, update instance, that can access the new buffer
+    const newSoundClass = Object.keys(newSoundMetadata)[0];
     setSoundInstancesData(prev => {
       if (!prev.has(newInstanceKey)) return prev; // Don't try if it was removed while the sound was being created
       const updatedNewInstance = {...prev.get(newInstanceKey), soundClass: newSoundClass};
       return new Map(prev.set(newInstanceKey, updatedNewInstance))
-    });
-
-    setLibraryMetadata(prev => {
-      const newLibraryMetadata = ({...prev})
-      newLibraryMetadata[newSoundClass] = newSoundInfo;
-      return newLibraryMetadata;
     });
     
   }
@@ -108,19 +107,19 @@ function App() {
   return (
     <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
       <Pot soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} removeSoundInstance={removeSoundInstance} mergeSoundInstances={mergeSoundInstances} addOnLoadListener={addOnLoadListener} />
-      <Sidebar soundClassesData={soundClassesData} addSoundInstance={addSoundInstance} setLibraryMetadata={setLibraryMetadata} />
+      <Sidebar library={library} addSoundToLibrary={addSoundToLibrary} addSoundInstance={addSoundInstance} />
     </main>
   )
 }
 
-const Sidebar = ({soundClassesData, addSoundInstance, setLibraryMetadata}) => {
+const Sidebar = ({ library, addSoundToLibrary, addSoundInstance }) => {
   return <div className="bg-stone-800 flex flex-col max-h-dvh">
-    <Library soundClassesData={soundClassesData} addSoundInstance={addSoundInstance} />
-    <Recorder setLibraryMetadata={setLibraryMetadata} />
+    <LibraryView library={library} addSoundInstance={addSoundInstance} />
+    <Recorder addSoundToLibrary={addSoundToLibrary} />
   </div>
 }
 
-const Recorder = ({ setLibraryMetadata }) => {
+const Recorder = ({ addSoundToLibrary }) => {
   const [recording, setRecording] = useState(false);
 
   const recorderRef = useRef(null);
@@ -144,12 +143,7 @@ const Recorder = ({ setLibraryMetadata }) => {
     setRecording(false);
     const recording = await recorder.stop();
     const newSoundMetadata = await uploadRecording(recording);
-    const [newSoundClass, newSoundInfo] = Object.entries(newSoundMetadata)[0] ;
-    setLibraryMetadata(prev => {
-      const newLibraryMetadata = ({...prev})
-      newLibraryMetadata[newSoundClass] = newSoundInfo;
-      return newLibraryMetadata;
-    });
+    addSoundToLibrary(newSoundMetadata);
   }
 
   const startRecording = async () => {
@@ -167,8 +161,8 @@ const Recorder = ({ setLibraryMetadata }) => {
   return <div {...bind()} className={`${recording? "bg-red-500" : "bg-stone-700"} h-16 touch-none cursor-pointer`}/>
 }
 
-const Library = ({ soundClassesData, addSoundInstance }) => {
-  const soundClasses = [...soundClassesData.entries()].map(([soundClass, {soundClassData}]) => <SoundClass key={soundClass} soundClass={soundClass} addSoundInstance={addSoundInstance} />);
+const LibraryView = ({ library, addSoundInstance }) => {
+  const soundClasses = [...library.entries()].map(([soundClass, {soundClassData}]) => <SoundClass key={soundClass} soundClass={soundClass} addSoundInstance={addSoundInstance} />);
 
   return (
     <div id="library" className="p-4 grid grid-cols-[repeat(auto-fill,_minmax(64px,_1fr))] content-start place-items-center gap-4 overflow-auto flex-auto">
