@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, createContext, useContext } from 'react';
 import { useSpring, animated, useTransition } from '@react-spring/web'
 import { useDrag } from '@use-gesture/react'
 import * as Tone from "tone";
@@ -8,6 +8,10 @@ import { getBorderColor } from './utils/misc';
 import { getLibraryMetadata, getMergedSoundsMetadata, uploadRecording } from './api';
 
 const soundBuffers = new Map();
+const LibraryContext = createContext({
+  library: new Map(),
+  addSoundToLibrary: () => {}
+});
 
 function App() {
   const [library, setLibrary] = useState(null);
@@ -102,20 +106,24 @@ function App() {
 
   return (
     <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
+    <LibraryContext.Provider value={{ library, addSoundToLibrary }}>
       <Pot soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} removeSoundInstance={removeSoundInstance} mergeSoundInstances={mergeSoundInstances} addOnLoadListener={addOnLoadListener} />
-      <Sidebar library={library} addSoundToLibrary={addSoundToLibrary} addSoundInstance={addSoundInstance} />
+      <Sidebar addSoundInstance={addSoundInstance} />
+    </LibraryContext.Provider>
     </main>
   )
 }
 
-const Sidebar = ({ library, addSoundToLibrary, addSoundInstance }) => {
+const Sidebar = ({ addSoundInstance }) => {
   return <div className="bg-stone-800 flex flex-col max-h-dvh">
-    <LibraryView library={library} addSoundInstance={addSoundInstance} />
-    <Recorder addSoundToLibrary={addSoundToLibrary} />
+    <LibraryView addSoundInstance={addSoundInstance} />
+    <Recorder />
   </div>
 }
 
-const Recorder = ({ addSoundToLibrary }) => {
+const Recorder = () => {
+  const { addSoundToLibrary } = useContext(LibraryContext);
+
   const [recording, setRecording] = useState(false);
 
   const recorderRef = useRef(null);
@@ -157,7 +165,8 @@ const Recorder = ({ addSoundToLibrary }) => {
   return <div {...bind()} className={`${recording? "bg-red-500" : "bg-stone-700"} h-16 touch-none cursor-pointer`}/>
 }
 
-const LibraryView = ({ library, addSoundInstance }) => {
+const LibraryView = ({ addSoundInstance }) => {
+  const { library } = useContext(LibraryContext);
   const LibrarySounds = [...library.entries()].map(([soundName, _]) => <LibrarySound key={soundName} soundName={soundName} addSoundInstance={addSoundInstance} />);
 
   return (
