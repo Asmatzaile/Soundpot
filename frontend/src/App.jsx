@@ -7,7 +7,6 @@ import { doCirclesCollide, isCircleInCircle } from './utils/math';
 import { getBorderColor } from './utils/misc';
 import { getLibraryMetadata, getMergedSoundsMetadata, uploadRecording } from './api';
 
-const soundBuffers = new Map();
 const LibraryContext = createContext({
   library: new Map(),
   addSoundToLibrary: () => {}
@@ -26,10 +25,10 @@ function App() {
 
   const addSoundToLibrary = (soundMetadata) => {
     const [soundName, soundInfo] = soundMetadata;
-    loadBuffer(soundName);
+    const buffer = loadBuffer(soundName);
     setLibrary(prev => {
       prev ??= new Map();
-      prev.set(soundName, soundInfo)
+      prev.set(soundName, {...soundInfo, buffer})
       return new Map(prev);
     });
   }
@@ -51,11 +50,10 @@ function App() {
   }
 
   const loadBuffer = (soundName) => {
-    if (soundBuffers.has(soundName)) return;
     console.info(`Loading sound "${soundName}"...`);
     const buffer = new Tone.ToneAudioBuffer("/api/library/" + soundName);
     addOnLoadListener(buffer, () => console.info(`Sound "${soundName}" loaded!`));
-    soundBuffers.set(soundName, buffer);
+    return buffer;
   }
 
   const [soundInstancesData, setSoundInstancesData] = useState(new Map());
@@ -350,6 +348,8 @@ const LibrarySound = ({ soundName, addSoundInstance }) => {
 }
 
 const SoundInstance = ({ id, isDisposed, soundName, pos, functions, justCollided, creationEvent }) => {
+  const { library } = useContext(LibraryContext);
+
   const playerRef = useRef(null);
   const player = playerRef.current;
 
@@ -371,7 +371,7 @@ const SoundInstance = ({ id, isDisposed, soundName, pos, functions, justCollided
     borderColor.current = getBorderColor(soundName);
 
     if (soundName === undefined) return () => undefined;
-    const buffer = soundBuffers.get(soundName);
+    const buffer = library.get(soundName).buffer;
     if (!buffer.loaded) functions.addOnLoadListener(buffer, loadPlayer);
     else loadPlayer(buffer);
     return () => playerRef.current?.dispose();
