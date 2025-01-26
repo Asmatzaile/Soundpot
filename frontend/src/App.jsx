@@ -14,9 +14,9 @@ function App() {
   const [bufferListeners, setBufferListeners] = useState(new Map());
 
   useEffect(()=> { // init script
-    ( async () => Object.entries(await getLibraryMetadata()).forEach(([soundClass, soundInfo])=> {
+    ( async () => Object.entries(await getLibraryMetadata()).forEach(([soundName, soundInfo])=> {
       const soundMetadata = {}
-      soundMetadata[soundClass] = soundInfo;
+      soundMetadata[soundName] = soundInfo;
       addSoundToLibrary(soundMetadata);
     }) )();
     const compressor = new Tone.Compressor()
@@ -25,11 +25,11 @@ function App() {
   }, []);
 
   const addSoundToLibrary = (soundMetadata) => {
-    const [soundClass, soundInfo] = Object.entries(soundMetadata)[0];
-    loadBuffer(soundClass);
+    const [soundName, soundInfo] = Object.entries(soundMetadata)[0];
+    loadBuffer(soundName);
     setLibrary(prev => {
       prev ??= new Map();
-      prev.set(soundClass, soundInfo)
+      prev.set(soundName, soundInfo)
       return new Map(prev);
     });
   }
@@ -80,25 +80,25 @@ function App() {
     setSoundInstancesData(new Map(soundInstancesData));
   }
   const mergeSoundInstances = async (key1, key2) => {
-    const {soundClass: soundClass1, pos: pos1} = soundInstancesData.get(key1);
-    const {soundClass: soundClass2, pos: pos2} = soundInstancesData.get(key2);
+    const {soundName: soundName1, pos: pos1} = soundInstancesData.get(key1);
+    const {soundName: soundName2, pos: pos2} = soundInstancesData.get(key2);
 
     removeSoundInstance(key1);
     removeSoundInstance(key2);
     const pos = {x: (pos1.x + pos2.x) / 2, y: (pos1.y + pos2.y) / 2};
-    const newInstanceKey = addSoundInstance({soundClass: undefined, pos});
+    const newInstanceKey = addSoundInstance({soundName: undefined, pos});
 
-    const newSoundMetadata = await getMergedSoundsMetadata(soundClass1, soundClass2);
+    const newSoundMetadata = await getMergedSoundsMetadata(soundName1, soundName2);
     if (!newSoundMetadata) return removeSoundInstance(newInstanceKey); // if there was an error, abort
 
     // First, add the sound to the library, so that the buffer is loaded
     addSoundToLibrary(newSoundMetadata);
 
     // Then, update instance, that can access the new buffer
-    const newSoundClass = Object.keys(newSoundMetadata)[0];
+    const newSoundName = Object.keys(newSoundMetadata)[0];
     setSoundInstancesData(prev => {
       if (!prev.has(newInstanceKey)) return prev; // Don't try if it was removed while the sound was being created
-      const updatedNewInstance = {...prev.get(newInstanceKey), soundClass: newSoundClass};
+      const updatedNewInstance = {...prev.get(newInstanceKey), soundName: newSoundName};
       return new Map(prev.set(newInstanceKey, updatedNewInstance))
     });
     
@@ -162,11 +162,11 @@ const Recorder = ({ addSoundToLibrary }) => {
 }
 
 const LibraryView = ({ library, addSoundInstance }) => {
-  const soundClasses = [...library.entries()].map(([soundClass, {soundClassData}]) => <SoundClass key={soundClass} soundClass={soundClass} addSoundInstance={addSoundInstance} />);
+  const LibrarySounds = [...library.entries()].map(([soundName, _]) => <LibrarySound key={soundName} soundName={soundName} addSoundInstance={addSoundInstance} />);
 
   return (
     <div id="library" className="p-4 grid grid-cols-[repeat(auto-fill,_minmax(64px,_1fr))] content-start place-items-center gap-4 overflow-auto flex-auto">
-      {soundClasses}
+      {LibrarySounds}
     </div>
   )
 }
@@ -328,23 +328,23 @@ const Ripple = ({pos, id, functions}) => {
   ></animated.div>
 }
 
-const SoundClass = ( { soundClass, addSoundInstance }) => {
+const LibrarySound = ({ soundName, addSoundInstance }) => {
   const divRef = useRef(null);
-  const borderColor = useRef(getBorderColor(soundClass));
+  const borderColor = useRef(getBorderColor(soundName));
 
   const handlePointerDown = (e) => {
     const pos = {x: getElementCenter(divRef.current).x, y: getElementCenter(divRef.current).y}
-    addSoundInstance({soundClass, pos, creationEvent: e});
+    addSoundInstance({soundName, pos, creationEvent: e});
   }
 
   return (
     <div ref={divRef} className={`w-16 h-16 border-8 rounded-full ${borderColor.current} cursor-grab touch-none grid place-content-center text-white select-none`}
       onPointerDown={handlePointerDown}
-    >{soundClass}</div>
+    >{soundName}</div>
   )
 }
 
-const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollided, creationEvent }) => {
+const SoundInstance = ({ id, isDisposed, soundName, pos, functions, justCollided, creationEvent }) => {
   const playerRef = useRef(null);
   const player = playerRef.current;
 
@@ -361,19 +361,18 @@ const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollide
     functions.updateInstance(id, {isBusy: !loaded || dragging});
   }, [loaded, dragging, isDisposed]);
 
+  const borderColor = useRef(getBorderColor(soundName));
   useEffect(() => {
-    if (soundClass === undefined) return () => undefined;
-    const buffer = soundBuffers.get(soundClass);
+    borderColor.current = getBorderColor(soundName);
+
+    if (soundName === undefined) return () => undefined;
+    const buffer = soundBuffers.get(soundName);
     if (!buffer.loaded) functions.addOnLoadListener(buffer, loadPlayer);
     else loadPlayer(buffer);
     return () => playerRef.current?.dispose();
-  }, [soundClass])
+  }, [soundName])
   if (isDisposed) playerRef.current?.stop()
   
-  const borderColor = useRef(getBorderColor(soundClass));
-  useEffect(() => {
-    borderColor.current = getBorderColor(soundClass);
-  }, [soundClass])
   const [zIndex, setZIndex] = useState(0);
 
   const onChangeRef = useRef(null);
@@ -417,7 +416,7 @@ const SoundInstance = ({ id, isDisposed, soundClass, pos, functions, justCollide
 
   return <animated.div {...bind()} ref={divRef}
     className={`absolute w-24 h-24 border-8 rounded-full ${borderColor.current} ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none flex justify-center items-center text-white`}
-    style={{ zIndex, left: "-48px", top: "-48px", transform }} > {soundClass}
+    style={{ zIndex, left: "-48px", top: "-48px", transform }} > {soundName}
     {loaded || <div className="loader" />}
     </animated.div>
 }
