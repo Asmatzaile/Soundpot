@@ -55,18 +55,18 @@ function App() {
   const [soundClassesData, setSoundClassesData] = useState(new Map());
   const [soundInstancesData, setSoundInstancesData] = useState(new Map());
   
-  const [lastClassKey, setLastClassKey] = useState(-1 + soundClassesData.size);
-  const getNewClassKey = () => {
-    const newClassKey = lastClassKey + 1;
-    setLastClassKey(newClassKey);
-    return newClassKey;
+  const [lastInstanceKey, setLastInstanceKey] = useState(-1);
+  const getNewInstanceKey = () => {
+    const newInstanceKey = lastInstanceKey + 1;
+    setLastInstanceKey(newInstanceKey);
+    return newInstanceKey;
   }
 
   const loaded = libraryMetadata !== null
   if (!loaded) return <main className="min-h-dvh grid place-content-center" >Loading...</main>
 
   const addSoundInstance = (instanceData) => {
-    const key = getNewClassKey();
+    const key = getNewInstanceKey();
     setSoundInstancesData(new Map(soundInstancesData.set(key, instanceData)));
     return key;
   }
