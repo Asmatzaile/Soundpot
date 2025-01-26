@@ -122,37 +122,67 @@ const Sidebar = ({ addSoundInstance }) => {
 const Recorder = () => {
   const { addSoundToLibrary } = useContext(LibraryContext);
 
-  const [recording, setRecording] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
 
   const recorderRef = useRef(null);
-  const recorder = recorderRef.current;
   const micRef = useRef(null);
-  const mic = micRef.current;
+  const micIdRef = useRef(null);
+  const micStreamRef = useRef(null);
+
   useEffect(() => {
-    const mic = new Tone.UserMedia();
     const recorder = new Tone.Recorder();
-    mic.connect(recorder);
-    mic.open();
-    micRef.current = mic;
     recorderRef.current = recorder;
     return () => {
-      mic.disconnect();
-      recorder.dispose();
+      recorderRef.current.dispose();
     }
   }, [])
 
   const saveRecording = async () => {
-    setRecording(false);
-    const recording = await recorder.stop();
+    if (!isRecording) return;
+    setIsRecording(false);
+    // closeMic(); // if mic is closed, next recording has to open it and cuts the start!
+    const recording = await recorderRef.current.stop();
     const newSoundMetadata = await uploadRecording(recording);
     addSoundToLibrary(newSoundMetadata);
   }
 
+  const openMic = async () => {
+    if (micRef.current) return true;
+    const recordingPermission = (await navigator.permissions.query({ name: 'microphone' })).state;
+    const prevMicId = micIdRef.current;
+    try {
+      const constraints = prevMicId ? {deviceId: prevMicId} : true;
+      const micStream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
+      micStreamRef.current = micStream;
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const deviceId = devices.find(d => d.label === micStream.getAudioTracks()[0].label).deviceId;
+      micIdRef.current = deviceId;
+      const mic = Tone.getContext().createMediaStreamSource(micStream);
+      micRef.current = mic;
+      Tone.connect(mic, recorderRef.current);
+    } catch (e) {
+      console.error("Error accessing the microphone:", e)
+    }
+    if (recordingPermission === "granted") return true;
+    closeMic();
+    return false;
+  }
+
+  const closeMic = () => {
+    const micStream = micStreamRef.current;
+    const mic = micRef.current;
+    if (micStreamRef) micStream.getTracks().forEach(track => track.stop());
+    if (mic) mic.disconnect();
+    micStreamRef.current = null;
+    micRef.current = null;
+  }
+
   const startRecording = async () => {
-    mic.open().then(() => {
-      setRecording(true);
-      recorder.start();
-    }).catch(e => console.warn("User doesn't have mic or didn't allow access"));
+    const recorder = recorderRef.current;
+    if (isRecording) return;
+    if (!await openMic()) return;
+    setIsRecording(true);
+    recorder.start();
   }
 
   const bind = useDrag(({ first, last }) => {
@@ -160,7 +190,7 @@ const Recorder = () => {
     if (last) saveRecording();
   }) 
 
-  return <div {...bind()} className={`${recording? "bg-red-500" : "bg-stone-700"} h-16 touch-none cursor-pointer`}/>
+  return <div {...bind()} className={`${isRecording? "bg-red-500" : "bg-stone-700"} h-16 touch-none cursor-pointer`}/>
 }
 
 const LibraryView = ({ addSoundInstance }) => {
