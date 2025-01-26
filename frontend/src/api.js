@@ -1,7 +1,7 @@
-export const getLibraryData = async () => {
+export const getLibraryMetadata = async () => {
     while(true) {
         try {
-            const response = await fetch("/api/library/");
+            const response = await fetch("/api/library_metadata/");
             if (response.ok) return await response.json();
             throw new Error('Response was not ok');
         } catch (error) {
@@ -10,7 +10,7 @@ export const getLibraryData = async () => {
     }
 }
 
-export const getMergedSoundsData = async (filename1, filename2) => {
+export const getMergedSoundsMetadata = async (filename1, filename2) => {
     const formData = new FormData();
     formData.append("filename1", filename1);
     formData.append("filename2", filename2);
@@ -29,5 +29,6 @@ export const uploadRecording = async (recording) => {
         method: "POST",
         body: recordingData,
     })
-    return await response.json();
+    const soundMetadata = await response.json();
+    return soundMetadata;
 }

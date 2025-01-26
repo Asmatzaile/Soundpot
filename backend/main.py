@@ -25,10 +25,10 @@ logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logging.debug(f"Loading library...")
-    load_library()
-    save_library()
-    logging.info(f"Library loaded.")
+    logging.debug(f"Loading library metadata...")
+    load_library_metadata()
+    save_library_metadata()
+    logging.info(f"Library metadata loaded.")
 
     logging.debug("Loading model...")
     load_model()
@@ -175,66 +175,65 @@ async def interpolate_audio(
         print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
-sounds_folder_path = '../sounds'
-LIBRARY = None
+sounds_folder_path = '../library'
+LIBRARY_METADATA = None
 
-app.mount("/sounds/", StaticFiles(directory=sounds_folder_path)) # special characters on the filename need to addressed by the client in their requests request
+app.mount("/library/", StaticFiles(directory=sounds_folder_path)) # special characters on the filename need to addressed by the client in their requests request
 
-@app.get("/library/")
-async def serve_library():
-    return load_library()
+@app.get("/library_metadata/")
+async def serve_library_metadata():
+    return load_library_metadata()
 
-def load_library():
-    global LIBRARY
-    if LIBRARY is not None: return LIBRARY
+def load_library_metadata():
+    global LIBRARY_METADATA
+    if LIBRARY_METADATA is not None: return LIBRARY_METADATA
     os.makedirs(sounds_folder_path, exist_ok=True) # make the folder if it doesn't exist
     try:
-        with open(f"{sounds_folder_path}/.library.json") as f:
-            LIBRARY = json.load(f)
+        with open(f"{sounds_folder_path}/.metadata.json") as f:
+            LIBRARY_METADATA = json.load(f)
     except:
         pass
     found_sounds = []
     for filename in os.listdir(sounds_folder_path):
-        if filename == ".library.json": continue # skip the library file
+        if filename == ".metadata.json": continue # skip the metadata file
         if not filename.endswith(".wav"):
-            logging.warning(f"File {filename} on sounds folder was not recognized!")
+            logging.warning(f"File {filename} on sounds library folder was not recognized!")
             continue
         found_sounds.append(filename)
-        if filename not in LIBRARY:
-            LIBRARY[filename] = {'origin': 'primordial', 'date': datetime.now().isoformat(timespec="seconds")}
+        if filename not in LIBRARY_METADATA:
+            LIBRARY_METADATA[filename] = {'origin': 'primordial', 'date': datetime.now().isoformat(timespec="seconds")}
     
-    for filename in list(LIBRARY):
+    for filename in list(LIBRARY_METADATA):
         if filename in found_sounds: continue
-        logging.warning(f"File \"{filename}\" not found! Removing from library.")
-        LIBRARY.pop(filename)
+        logging.warning(f"File \"{filename}\" not found! Removing from library metadata.")
+        LIBRARY_METADATA.pop(filename)
 
-    return LIBRARY
+    return LIBRARY_METADATA
 
-def save_library():
-    global LIBRARY
-    with open(f"{sounds_folder_path}/.library.json", "w", encoding="utf-8") as f:
-        json.dump(LIBRARY, f, ensure_ascii=False, indent=4)
+def save_library_metadata():
+    with open(f"{sounds_folder_path}/.metadata.json", "w", encoding="utf-8") as f:
+        json.dump(LIBRARY_METADATA, f, ensure_ascii=False, indent=4)
 
 def get_new_sound_name():
-    candidate_filename_base = f"sound{len(LIBRARY)}"
+    candidate_filename_base = f"sound{len(LIBRARY_METADATA)}"
     candidate_filename = f"{candidate_filename_base}.wav"
-    if candidate_filename not in LIBRARY: return candidate_filename
+    if candidate_filename not in LIBRARY_METADATA: return candidate_filename
     retries = 1
     while (True):
         candidate_filename = f"{candidate_filename_base}({retries}).wav"
-        if candidate_filename not in LIBRARY: return candidate_filename
+        if candidate_filename not in LIBRARY_METADATA: return candidate_filename
         retries += 1
 
 @app.post("/merge/")
 async def merge_sounds(filename1 : str = Form(...), filename2 : str = Form(...)):
     output_filename = get_new_sound_name()
-    LIBRARY[output_filename] = "creating..."
+    LIBRARY_METADATA[output_filename] = "creating..."
     logging.info(f"Merging sounds {filename1} and {filename2} into {output_filename}")
     await interpolate_sounds(sounds_folder_path+"/"+filename1, sounds_folder_path+"/"+filename2, sounds_folder_path+"/"+output_filename)
-    soundData = {'origin': 'merge', 'parents': [filename1, filename2], 'date': datetime.now().isoformat(timespec="seconds")}
-    LIBRARY[output_filename] = soundData
-    save_library()
-    return {output_filename: soundData}
+    soundMetadata = {'origin': 'merge', 'parents': [filename1, filename2], 'date': datetime.now().isoformat(timespec="seconds")}
+    LIBRARY_METADATA[output_filename] = soundMetadata
+    save_library_metadata()
+    return {output_filename: soundMetadata}
 
 @app.post("/upload_recording/")
 async def add_recording(recording = File(...)):
@@ -243,10 +242,10 @@ async def add_recording(recording = File(...)):
     buffer = io.BytesIO(content)
     audio = AudioSegment.from_file(buffer)
     audio.export(sounds_folder_path+"/"+filename, format="wav")
-    soundData = {'origin': 'recording', 'date': datetime.now().isoformat(timespec="seconds")}
-    LIBRARY[filename] = soundData
-    save_library()
-    return {filename: soundData}
+    soundMetadata = {'origin': 'recording', 'date': datetime.now().isoformat(timespec="seconds")}
+    LIBRARY_METADATA[filename] = soundMetadata
+    save_library_metadata()
+    return {filename: soundMetadata}
 
 async def interpolate_sounds(path1, path2, output_path):
     tensor1 = await get_tensor_of_audio(path1)
