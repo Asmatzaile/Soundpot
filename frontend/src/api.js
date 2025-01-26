@@ -1,7 +1,7 @@
-export const getLibraryMetadata = async () => {
+export const getLibraryMetadata = async (signal) => {
     while(true) {
         try {
-            const response = await fetch("/api/library_metadata/");
+            const response = await fetch("/api/library_metadata/", { signal });
             if (response.ok) return await response.json();
             throw new Error('Response was not ok');
         } catch (error) {

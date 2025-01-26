@@ -17,17 +17,26 @@ function App() {
   const [bufferListeners, setBufferListeners] = useState(new Map());
 
   useEffect(()=> { // init script
-    ( async () => Object.entries(await getLibraryMetadata()).forEach(soundMetadata=>addSoundToLibrary(soundMetadata)) )();
+    const abortController = new AbortController();
+    const signal  = abortController.signal;
+
+    ( async () => {
+      const libraryMetadata = await getLibraryMetadata(signal);
+      setLibrary(new Map());
+      Object.entries(libraryMetadata).forEach(soundMetadata=>addSoundToLibrary(soundMetadata));
+    } )();
+
     const compressor = new Tone.Compressor()
     const reverb = new Tone.Reverb({ wet: 0.5 });
     Tone.getDestination().chain(reverb, compressor);
+
+    return () => abortController.abort();
   }, []);
 
   const addSoundToLibrary = (soundMetadata) => {
     const [soundName, soundInfo] = soundMetadata;
     const buffer = loadBuffer(soundName);
     setLibrary(prev => {
-      prev ??= new Map();
       prev.set(soundName, {...soundInfo, buffer})
       return new Map(prev);
     });
