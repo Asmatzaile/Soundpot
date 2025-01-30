@@ -511,7 +511,8 @@ const SoundWaveform = ({ className="", soundName, loaded }) => {
 
   const maskId = useId();
   return <div style={{ transition: "color 0.4s" }}
-  className={`${className} ${className.includes('absolute')? '' : 'relative'} border-4 border-current rounded-full flex justify-center items-center ${color.current}`}>
+  className={`${className} ${className.includes('absolute')? '' : 'relative'} ${color.current} border-current border-4 rounded-full
+  flex justify-center items-center backdrop-blur-xs`}>
     <svg style={{ scale: "100%", pointerEvents: "none" }} className='stroke-current absolute' viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <mask id={maskId}>
