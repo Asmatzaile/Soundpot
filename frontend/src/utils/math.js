@@ -12,3 +12,29 @@ const dy = c2y - c1y;
 const d = Math.sqrt(dx*dx + dy*dy);
 return d < Math.abs(c2r-c1r);
 }
+
+export const resampleArray = (array, newLength) => {
+    const sliceStarts = euclidAbsolute(newLength, array.length);
+    const slices = sliceStarts.map((sliceStart, index) => {
+        const sliceData = array.slice(sliceStart, sliceStarts[index+1]??array.length);
+        return Math.max(...sliceData.map(Math.abs));
+    })
+    return slices;
+}
+
+const euclidAbsolute = (pulses, steps) => {
+    if (pulses > steps) throw new Error(`More pulses (${pulses}) than steps (${steps})!`);
+
+    const bjorklundArray = Array(steps);
+	let lastTruncated = 0;
+	for (let i = 1; i <= steps; i++) {
+		const truncatedValue = Math.floor((i * pulses)/steps);
+		const bjorklundValue = truncatedValue - lastTruncated;
+		lastTruncated = truncatedValue;
+
+		const index = (i==steps) ? 0 : i;	// puts the last element first
+		bjorklundArray[index] = bjorklundValue;
+	}
+
+    return bjorklundArray.map((value, index)=>value == 1 ? value*index : undefined).filter(item=>item!==undefined);
+}

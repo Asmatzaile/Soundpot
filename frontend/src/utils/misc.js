@@ -1,8 +1,8 @@
-const borderColorNames = ['border-red-400', 'border-orange-400', 'border-amber-400', 'border-yellow-400', 'border-lime-400', 'border-green-400', 'border-emerald-400', 'border-teal-400', 'border-cyan-400', 'border-sky-400', 'border-blue-400', 'border-indigo-400', 'border-violet-400', 'border-purple-400', 'border-fuchsia-400', 'border-pink-400', 'border-rose-400'];
+const textColorNames = ['text-red-400', 'text-orange-400', 'text-amber-400', 'text-yellow-400', 'text-lime-400', 'text-green-400', 'text-emerald-400', 'text-teal-400', 'text-cyan-400', 'text-sky-400', 'text-blue-400', 'text-indigo-400', 'text-violet-400', 'text-purple-400', 'text-fuchsia-400', 'text-pink-400', 'text-rose-400'];
 
-export const getBorderColor = (soundName) => {
+export const getSoundColor = (soundName) => {
     if (soundName === undefined) return undefined;
-    return borderColorNames[getUnicodeSum(soundName)%borderColorNames.length];
+    return textColorNames[getUnicodeSum(soundName)%textColorNames.length];
 }
 
 const getUnicodeSum = (string) => {

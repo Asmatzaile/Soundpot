@@ -1,20 +1,28 @@
-import { useEffect, useRef, useState, createContext, useContext } from 'react';
+import { useEffect, useRef, useState, createContext, useContext, useId } from 'react';
 import { useSpring, animated, useTransition } from '@react-spring/web'
 import { useDrag } from '@use-gesture/react'
 import * as Tone from "tone";
 import { dispatchPointerEvent, getElementCenter, isSelectorInPoint } from './utils/dom';
-import { doCirclesCollide, isCircleInCircle } from './utils/math';
-import { getBorderColor } from './utils/misc';
+import { doCirclesCollide, isCircleInCircle, resampleArray } from './utils/math';
+import { getSoundColor } from './utils/misc';
 import { getLibraryMetadata, getMergedSoundsMetadata, uploadRecording } from './api';
 
 const LibraryContext = createContext({
   library: new Map(),
-  addSoundToLibrary: () => {}
+  addSoundToLibrary: () => {},
+  addOnLoadListener: () => {},
 });
+
+const DISPLAYBUFFER_SIZE = 32;
 
 function App() {
   const [library, setLibrary] = useState(null);
   const [bufferListeners, setBufferListeners] = useState(new Map());
+
+  const latestLibrary = useRef(library);
+  useEffect(() => {
+    latestLibrary.current = library;
+  }, [library]);
 
   useEffect(()=> { // init script
     const abortController = new AbortController();
@@ -62,7 +70,18 @@ function App() {
     console.info(`Loading sound "${soundName}"...`);
     const buffer = new Tone.ToneAudioBuffer("/api/library/" + soundName);
     addOnLoadListener(buffer, () => console.info(`Sound "${soundName}" loaded!`));
+    addOnLoadListener(buffer, () => generateDisplayBuffer(soundName));
     return buffer;
+  }
+
+  const generateDisplayBuffer = async (soundName) => {
+    const buffer = latestLibrary.current.get(soundName).buffer;
+    const channelData = buffer.getChannelData(0);
+    const displayBuffer = resampleArray(channelData, DISPLAYBUFFER_SIZE);
+    setLibrary(prev => {
+      prev.set(soundName, {...prev.get(soundName), displayBuffer})
+      return new Map(prev);
+    });
   }
 
   const [soundInstancesData, setSoundInstancesData] = useState(new Map());
@@ -113,8 +132,8 @@ function App() {
 
   return (
     <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
-    <LibraryContext.Provider value={{ library, addSoundToLibrary }}>
-      <Pot soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} removeSoundInstance={removeSoundInstance} mergeSoundInstances={mergeSoundInstances} addOnLoadListener={addOnLoadListener} />
+    <LibraryContext.Provider value={{ library, addSoundToLibrary, addOnLoadListener }}>
+      <Pot soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} removeSoundInstance={removeSoundInstance} mergeSoundInstances={mergeSoundInstances} />
       <Sidebar addSoundInstance={addSoundInstance} />
     </LibraryContext.Provider>
     </main>
@@ -213,7 +232,7 @@ const LibraryView = ({ addSoundInstance }) => {
   )
 }
 
-const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, mergeSoundInstances, addOnLoadListener }) => {
+const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, mergeSoundInstances }) => {
 
   const [highestZIndex, setHighestZIndex] = useState(1);
   const instanceFunctions = {
@@ -237,7 +256,6 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
       });
       if (collidingKey !== undefined) mergeSoundInstances(key, collidingKey)
     },
-    addOnLoadListener: addOnLoadListener,
   }
 
   const [ripplesData, setRipplesData] = useState(new Map());
@@ -371,8 +389,15 @@ const Ripple = ({pos, id, functions}) => {
 }
 
 const LibrarySound = ({ soundName, addSoundInstance }) => {
+  const { library, addOnLoadListener } = useContext(LibraryContext);
   const divRef = useRef(null);
-  const borderColor = useRef(getBorderColor(soundName));
+
+  const [loaded, setLoaded] = useState(false);
+  useEffect(()=> {
+    const buffer = library.get(soundName).buffer;
+    if (!buffer.loaded) addOnLoadListener(buffer, () => setLoaded(true));
+    else setLoaded(true);
+  }, [])
 
   const handlePointerDown = (e) => {
     const pos = {x: getElementCenter(divRef.current).x, y: getElementCenter(divRef.current).y}
@@ -380,14 +405,14 @@ const LibrarySound = ({ soundName, addSoundInstance }) => {
   }
 
   return (
-    <div ref={divRef} className={`w-16 h-16 border-8 rounded-full ${borderColor.current} cursor-grab touch-none grid place-content-center text-white select-none`}
-      onPointerDown={handlePointerDown}
-    >{soundName}</div>
+    <div ref={divRef} className={`cursor-grab touch-none select-none`} onPointerDown={handlePointerDown}>
+      <SoundWaveform soundName={soundName} loaded={loaded} className={"size-16"}/>
+    </div>
   )
 }
 
 const SoundInstance = ({ id, isDisposed, soundName, pos, functions, justCollided, creationEvent }) => {
-  const { library } = useContext(LibraryContext);
+  const { library, addOnLoadListener } = useContext(LibraryContext);
 
   const playerRef = useRef(null);
   const player = playerRef.current;
@@ -405,13 +430,10 @@ const SoundInstance = ({ id, isDisposed, soundName, pos, functions, justCollided
     functions.updateInstance(id, {isBusy: !loaded || dragging});
   }, [loaded, dragging, isDisposed]);
 
-  const borderColor = useRef(getBorderColor(soundName));
   useEffect(() => {
-    borderColor.current = getBorderColor(soundName);
-
     if (soundName === undefined) return () => undefined;
     const buffer = library.get(soundName).buffer;
-    if (!buffer.loaded) functions.addOnLoadListener(buffer, loadPlayer);
+    if (!buffer.loaded) addOnLoadListener(buffer, loadPlayer);
     else loadPlayer(buffer);
     return () => playerRef.current?.dispose();
   }, [soundName])
@@ -459,10 +481,54 @@ const SoundInstance = ({ id, isDisposed, soundName, pos, functions, justCollided
   }, [])
 
   return <animated.div {...bind()} ref={divRef}
-    className={`absolute w-24 h-24 border-8 rounded-full ${borderColor.current} ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none flex justify-center items-center text-white`}
-    style={{ zIndex, left: "-48px", top: "-48px", transform }} > {soundName}
-    {loaded || <div className="loader" />}
+    className={`absolute ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none`}
+    style={{ zIndex, transform }} >
+      <SoundWaveform soundName={soundName} loaded={loaded} className="size-24 -translate-x-1/2 -translate-y-1/2 absolute"/>
     </animated.div>
+}
+
+const SoundWaveform = ({ className="", soundName, loaded }) => {
+  const color = useRef(getSoundColor(soundName));
+  useEffect(() => {
+    color.current = getSoundColor(soundName) ?? 'text-white';
+  }, [soundName]);
+
+  const { library } = useContext(LibraryContext);
+  useEffect(()=> {
+    if (!soundName) return;
+    if (!library.get(soundName).displayBuffer) return;
+    setWaveformLines(calcWaveformLines(library.get(soundName).displayBuffer));
+  }, [library])
+
+  const calcWaveformLines = displayBuffer => displayBuffer.map((value, i) => {
+    const transform = `rotate(${i*360/displayBuffer.length})`;
+    const maxSize = 12.5;
+    const size = Math.max(1, value * maxSize);
+    const staggerTime = `${i/displayBuffer.length*0.1}s`
+    return <>
+      <line key={`${i}-out`} x1="0" x2="0" y1={-25} y2={-25-maxSize} strokeDasharray={maxSize} strokeDashoffset={maxSize-size} transform={transform} style={{ transition: `stroke-dashoffset 0.2s ease-out ${staggerTime}`}}/>
+      <line key={`${i}-in`} x1="0" x2="0" y1={-25} y2={-25+maxSize} strokeDasharray={maxSize} strokeDashoffset={maxSize-size} transform={transform} style={{ transition: `stroke-dashoffset 0.2s ease-out ${staggerTime}`}}/>
+    </>
+  });
+  const [waveformLines, setWaveformLines] = useState(calcWaveformLines(Array(DISPLAYBUFFER_SIZE).fill(0)));
+
+  const maskId = useId();
+  return <div style={{ transition: "color 0.4s" }}
+  className={`${className} ${className.includes('absolute')? '' : 'relative'} border-4 border-current rounded-full flex justify-center items-center ${color.current}`}>
+    <svg style={{ scale: "100%", pointerEvents: "none" }} className='stroke-current absolute' viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <mask id={maskId}>
+          <rect x="-50" y="-50" width="100" height="100" fill="white" />
+          <g style={{animation: `rotation 1s linear infinite ${loaded ? ', fadeout 0.1s linear forwards' : ''}`}}>
+            <path d="M 0 -50 L 0 0 L 50 0 A 50 50 0 1 0 0 -50" fill="black"/>
+          </g>
+        </mask>
+      </defs>
+      <g strokeLinecap='round' strokeWidth='2' mask={`url(#${maskId})`}>
+        {waveformLines}
+      </g>
+    </svg>
+  </div>
 }
 
 export default App
