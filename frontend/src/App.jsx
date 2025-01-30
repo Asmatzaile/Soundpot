@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, createContext, useContext, useId } from 'react';
-import { useSpring, animated, useTransition } from '@react-spring/web'
+import { useSpring, useTransition, animated, to } from '@react-spring/web'
 import { useDrag } from '@use-gesture/react'
 import * as Tone from "tone";
 import { dispatchPointerEvent, getElementCenter, isSelectorInPoint } from './utils/dom';
@@ -348,13 +348,9 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
       <div id="ripple-container" className="overflow-hidden relative size-full pointer-events-none">
           {ripples}
       </div>
-      {transitions((style, [key, instanceData]) =>
-      {
-        return(
-        <animated.div style={{...style, x: instanceData.pos.x, y: instanceData.pos.y}} key={key} className="absolute top-0 left-0">
-          <SoundInstance key={key} id={key} functions={instanceFunctions} {...instanceData} isDisposed={!soundInstancesData.has(key)}/>
-        </animated.div>
-      )})}
+      {transitions((style, [key, instanceData]) => <AnimatedSoundInstance style={{...style}} key={key} id={key}
+        functions={instanceFunctions} {...instanceData} isDisposed={!soundInstancesData.has(key)} />
+      )}
     </div>
   )
 }
@@ -411,7 +407,7 @@ const LibrarySound = ({ soundName, addSoundInstance }) => {
   )
 }
 
-const SoundInstance = ({ id, isDisposed, soundName, pos, functions, justCollided, creationEvent }) => {
+const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, justCollided, creationEvent }) => {
   const { library, addOnLoadListener } = useContext(LibraryContext);
 
   const playerRef = useRef(null);
@@ -461,7 +457,6 @@ const SoundInstance = ({ id, isDisposed, soundName, pos, functions, justCollided
     functions.updateInstance(id, {justCollided: false})
   }, [justCollided])
 
-
   const bind = useDrag(({ active, first, last, xy, offset: [x, y] }) => {
     if (first) setZIndex(functions.getHigherZIndex(zIndex));
     if (last && !isDisposed) {
@@ -481,11 +476,13 @@ const SoundInstance = ({ id, isDisposed, soundName, pos, functions, justCollided
   }, [])
 
   return <animated.div {...bind()} ref={divRef}
-    className={`absolute ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none`}
-    style={{ zIndex, transform }} >
+    className={`absolute ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none top-0`}
+    style={{ ...style, zIndex, transform: to([x, y, style.transform, transform], (x, y, tf1, tf2) => `translate3d(${x}px, ${y}px, 0) ${tf1} ${tf2}`) }} >
       <SoundWaveform soundName={soundName} loaded={loaded} className="size-24 -translate-x-1/2 -translate-y-1/2 absolute"/>
     </animated.div>
 }
+
+const AnimatedSoundInstance = animated(SoundInstance);
 
 const SoundWaveform = ({ className="", soundName, loaded }) => {
   const color = useRef(getSoundColor(soundName));
