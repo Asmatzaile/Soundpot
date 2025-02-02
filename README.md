@@ -35,9 +35,14 @@ Run the following:
 
 ```sh
 npm install
-npm run install:frontend
-npm run install:backend
 ```
+
+> [!NOTE]
+> If you know what you are doing, and are using different devices for frontend and backend, you can selectively install the parts:
+> ```sh
+> npm run install:frontend
+> npm run install:backend
+> ```
 
 #### Step 2: Get the Stable Audio Open variational autoencoder
 
@@ -60,6 +65,15 @@ To add 'primordial sounds' to the application, put them inside the `library` fol
 ```sh
 npm start
 ```
+
+> [!NOTE]
+> If you only installed either the frontend or the backend, that will probably not work.
+> To run only one of them, you can use one of the following:
+> 
+> ```sh
+> npm run start:frontend
+> npm run start:backend
+> ```
 
 ## License
 

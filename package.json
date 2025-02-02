@@ -7,6 +7,7 @@
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
     "start:frontend": "cd frontend && npm start",
     "start:backend": "cd backend && conda run --no-capture-output -n soundpot python3 main.py",
+    "postinstall": "concurrently \"npm run install:frontend\" \"npm run install:backend\"",
     "install:frontend": "mkdir -p sounds && cd frontend && npm install",
     "install:backend": "conda create -n soundpot -y && cd backend && conda run --no-capture-output -n soundpot pip install -r requirements.txt",
     "get_vae": "cd backend && conda run --no-capture-output -n soundpot python3 get_vae.py"
