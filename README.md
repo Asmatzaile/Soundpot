@@ -21,6 +21,10 @@ While in the pot:
 
 ## Running locally
 
+> [!IMPORTANT]
+> If you are using Windows, you'll need [Powershell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows) so that the following commands work properly.
+> Alternatively, you could run Linux from within your PC using [WSL2](https://learn.microsoft.com/windows/wsl/install).
+
 ### Installation
 
 #### Requirements
