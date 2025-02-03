@@ -175,7 +175,7 @@ async def interpolate_audio(
         print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
-sounds_folder_path = '../library'
+sounds_folder_path = './library'
 LIBRARY_METADATA = None
 
 app.mount("/library/", StaticFiles(directory=sounds_folder_path)) # special characters on the filename need to addressed by the client in their requests request
@@ -274,4 +274,4 @@ async def interpolate_sounds(path1, path2, output_path):
 if __name__ == "__main__":
     with open('../config.json') as f:
         config = json.load(f)
-    uvicorn.run("main:app", host="0.0.0.0", port=config["backend_port"], reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=config["backend_port"])

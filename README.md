@@ -62,7 +62,7 @@ npm run get_vae -- --token=<HF_TOKEN>
 
 ### Adding sounds
 
-To add 'primordial sounds' to the application, put them inside the `library` folder.
+To add 'primordial sounds' to the application, put them inside the `backend/library` folder.
 
 ### Running
 
