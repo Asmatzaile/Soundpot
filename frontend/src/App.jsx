@@ -350,7 +350,7 @@ const Water = ({ soundInstancesData, setSoundInstancesData}) => {
   }
   useEffect(() => {
     waterRef.current.addEventListener("pointerdown", handlePointerDown);
-    return () => waterRef.current.removeEventListener("pointerdown", handlePointerDown)
+    return () => waterRef.current?.removeEventListener("pointerdown", handlePointerDown)
   }, [ripplesData])
 
 
