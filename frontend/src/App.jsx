@@ -284,7 +284,9 @@ const Water = ({ soundInstancesData, setSoundInstancesData}) => {
   const addRipple = (rippleData) => {
     setRipplesData(prev=> {
       const key = Math.max(...prev.keys(), -1) + 1;
-      return new Map(prev.set(key, rippleData));
+      const newRippleData = new Map(prev);
+      newRippleData.set(key, rippleData);
+      return newRippleData;
     });
   }
   const removeRipple = (key) => {
