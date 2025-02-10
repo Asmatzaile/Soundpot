@@ -358,11 +358,13 @@ const Water = ({ soundInstancesData, setSoundInstancesData}) => {
 
   const ripples = [...ripplesData.entries()].map(([key, data]) => <Ripple key={key} id={key} {...data} functions={rippleFunctions} />)
   return <div ref={waterRef} id="water" className="overflow-hidden relative size-full">
-    {ripples}
+    <svg xmlns="http://www.w3.org/2000/svg" className="size-full pointer-events-none"
+      fill="none" stroke={"rgb(120 113 108)"/* color-stone-500*/} strokeWidth="2px">
+      {ripples}
+    </svg>
   </div>
 }
 
-// it would probably be more performant to draw them on a canvas
 const Ripple = ({pos, id, functions}) => {
   const onSpringEventRef = useRef(null);
 
@@ -386,9 +388,7 @@ const Ripple = ({pos, id, functions}) => {
   }, [functions]);
 
   useEffect(()=>{api.start()});
-  return <animated.div className="border-stone-500 border-2 rounded-full absolute pointer-events-none"
-  style={{transform: "translate(-50%, -50%)", left:pos.x, top:pos.y, width:size, height:size, color:"white"}}
-  ></animated.div>
+  return <animated.circle cx={pos.x} cy={pos.y} r={size.get()/2} />
 }
 
 const LibrarySound = ({ soundName, addSoundInstance }) => {
