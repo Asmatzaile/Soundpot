@@ -258,6 +258,27 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
     },
   }
 
+  const transitions = useTransition([...soundInstancesData.entries()], {
+    keys: (item) => item[0],
+    from: { opacity: 0, transform: "scale(0.3)" },
+    enter: { opacity: 1, transform: "scale(1)" },
+    leave: { opacity: 0, transform: "scale(0.3)" },
+    config: {
+      tension: 300,
+    }
+  });
+
+  return(
+    <div id="pot" className="bg-stone-900">
+      <Water soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} />
+      {transitions((style, [key, instanceData]) => <AnimatedSoundInstance style={{...style}} key={key} id={key}
+        functions={instanceFunctions} {...instanceData} isDisposed={!soundInstancesData.has(key)} />
+      )}
+    </div>
+  )
+}
+
+const Water = ({ soundInstancesData, setSoundInstancesData}) => {
   const [ripplesData, setRipplesData] = useState(new Map());
   const [maxRippleSize, setMaxRippleSize] = useState();
   const addRipple = (rippleData) => {
@@ -301,18 +322,18 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
   }
 
   const calcMaxRippleSize = () => {
-    const { width, height } = potRef.current.getBoundingClientRect();
+    const { width, height } = waterRef.current.getBoundingClientRect();
     setMaxRippleSize(Math.sqrt(width**2 + height**2) * 2);
   }
 
   const createRandomRipple = () => {
-    const { width, height } = potRef.current.getBoundingClientRect();
+    const { width, height } = waterRef.current.getBoundingClientRect();
     const x = Math.floor(Math.random()*width);
     const y = Math.floor(Math.random()*height);
     addRipple({pos:{x, y}});
   }
 
-  const potRef = useRef(null);
+  const waterRef = useRef(null);
   const intervalRef = useRef(null);
   useEffect(()=> {
     calcMaxRippleSize();
@@ -325,34 +346,18 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
   }, []);
 
   const handlePointerDown = (e) => {
-    if (e.target === potRef.current) addRipple({pos:{x:e.offsetX, y:e.offsetY}})
+    if (e.target === waterRef.current) addRipple({pos:{x:e.offsetX, y:e.offsetY}})
   }
   useEffect(() => {
-    potRef.current.addEventListener("pointerdown", handlePointerDown);
-    return () => potRef.current.removeEventListener("pointerdown", handlePointerDown)
+    waterRef.current.addEventListener("pointerdown", handlePointerDown);
+    return () => waterRef.current.removeEventListener("pointerdown", handlePointerDown)
   }, [ripplesData])
 
-  const transitions = useTransition([...soundInstancesData.entries()], {
-    keys: (item) => item[0],
-    from: { opacity: 0, transform: "scale(0.3)" },
-    enter: { opacity: 1, transform: "scale(1)" },
-    leave: { opacity: 0, transform: "scale(0.3)" },
-    config: {
-      tension: 300,
-    }
-  });
 
   const ripples = [...ripplesData.entries()].map(([key, data]) => <Ripple key={key} id={key} {...data} functions={rippleFunctions} />)
-  return(
-    <div id="pot" ref={potRef} className="bg-stone-900">
-      <div id="ripple-container" className="overflow-hidden relative size-full pointer-events-none">
-          {ripples}
-      </div>
-      {transitions((style, [key, instanceData]) => <AnimatedSoundInstance style={{...style}} key={key} id={key}
-        functions={instanceFunctions} {...instanceData} isDisposed={!soundInstancesData.has(key)} />
-      )}
-    </div>
-  )
+  return <div ref={waterRef} id="water" className="overflow-hidden relative size-full">
+    {ripples}
+  </div>
 }
 
 // it would probably be more performant to draw them on a canvas
