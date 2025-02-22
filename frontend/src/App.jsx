@@ -10,7 +10,6 @@ export const DISPLAYBUFFER_SIZE = 32;
 
 function App() {
   const [library, setLibrary] = useState(null);
-  const [bufferListeners, setBufferListeners] = useState(new Map());
 
   const latestLibrary = useRef(library);
   useEffect(() => {
@@ -43,27 +42,14 @@ function App() {
     });
   }
 
-  const addOnLoadListener = (buffer, listener) => {
-    setBufferListeners(prev => {
-      const listeners = prev.get(buffer) ?? [];
-      listeners.push(listener);
-      buffer.onload = () => {
-        listeners.forEach(fn => fn(buffer));
-        setBufferListeners(prev => {
-          prev.delete(buffer);
-          return new Map(prev);
-        })
-      }
-      prev.set(buffer, listeners);
-      return new Map(prev);
-    })
-  }
-
   const loadBuffer = (soundName) => {
     console.info(`Loading sound "${soundName}"...`);
     const buffer = new Tone.ToneAudioBuffer("/api/library/" + soundName);
-    addOnLoadListener(buffer, () => console.info(`Sound "${soundName}" loaded!`));
-    addOnLoadListener(buffer, () => generateDisplayBuffer(soundName));
+    buffer.onload = () => {
+      document.dispatchEvent(new Event(`bufferload-${soundName}`));
+      console.info(`Sound "${soundName}" loaded!`);
+      generateDisplayBuffer(soundName);
+    };
     return buffer;
   }
 
@@ -125,7 +111,7 @@ function App() {
 
   return (
     <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
-    <LibraryContext.Provider value={{ library, addSoundToLibrary, addOnLoadListener }}>
+    <LibraryContext.Provider value={{ library, addSoundToLibrary }}>
       <Pot soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} removeSoundInstance={removeSoundInstance} mergeSoundInstances={mergeSoundInstances} />
       <Sidebar addSoundInstance={addSoundInstance} />
     </LibraryContext.Provider>

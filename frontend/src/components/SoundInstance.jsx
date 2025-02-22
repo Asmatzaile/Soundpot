@@ -7,7 +7,7 @@ import LibraryContext from "../LibraryContext";
 import SoundWaveform from "./SoundWaveform";
 
 const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, justCollided, creationEvent }) => {
-  const { library, addOnLoadListener } = useContext(LibraryContext);
+  const { library } = useContext(LibraryContext);
 
   const playerRef = useRef(null);
   const player = playerRef.current;
@@ -28,8 +28,8 @@ const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, justC
   useEffect(() => {
     if (soundName === undefined) return () => undefined;
     const buffer = library.get(soundName).buffer;
-    if (!buffer.loaded) addOnLoadListener(buffer, loadPlayer);
-    else loadPlayer(buffer);
+    if (buffer.loaded) loadPlayer(buffer);
+    else document.addEventListener(`bufferload-${soundName}`, () => loadPlayer(buffer), { once: true });
     return () => playerRef.current?.dispose();
   }, [soundName])
   if (isDisposed) playerRef.current?.stop()

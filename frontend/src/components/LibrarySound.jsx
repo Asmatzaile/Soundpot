@@ -4,14 +4,14 @@ import LibraryContext from "../LibraryContext";
 import SoundWaveform from "./SoundWaveform";
 
 const LibrarySound = ({ soundName, addSoundInstance }) => {
-  const { library, addOnLoadListener } = useContext(LibraryContext);
+  const { library } = useContext(LibraryContext);
   const divRef = useRef(null);
   
   const [loaded, setLoaded] = useState(false);
   useEffect(()=> {
-    const buffer = library.get(soundName).buffer;
-    if (!buffer.loaded) addOnLoadListener(buffer, () => setLoaded(true));
-    else setLoaded(true);
+    const bufferLoaded = library.get(soundName).buffer.loaded;
+    setLoaded(bufferLoaded);
+    if (!bufferLoaded) document.addEventListener(`bufferload-${soundName}`, () => setLoaded(true), { once: true })
   }, [])
   
   const handlePointerDown = (e) => {
