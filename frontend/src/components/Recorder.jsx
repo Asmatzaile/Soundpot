@@ -3,78 +3,83 @@ import { useDrag } from "@use-gesture/react";
 import * as Tone from "tone";
 import { uploadRecording } from "../api";
 import LibraryContext from "../LibraryContext";
+import useMic from "@hooks/useMic";
 
 const Recorder = () => {
   const { addSoundToLibrary } = useContext(LibraryContext);
-  
-  const [isRecording, setIsRecording] = useState(false);
-  
+
+  const { state: micState, states: micStates, openMic } = useMic();
+
   const recorderRef = useRef(null);
-  const micRef = useRef(null);
-  const micIdRef = useRef(null);
-  const micStreamRef = useRef(null);
-  
   useEffect(() => {
     const recorder = new Tone.Recorder();
     recorderRef.current = recorder;
     return () => {
       recorderRef.current.dispose();
     }
-  }, [])
+  }, []);
+  useEffect(() => {
+    if (micState !== micStates.GRANTED) return;
+    let mic;
+    (async() => {
+      mic = await openMic();
+      Tone.connect(mic, recorderRef.current);
+    })
+    return () => mic ? Tone.disconnect(mic, recorderRef.current) : undefined;
+  }, [micState]);
+
+  const states = {
+    BLOCKED: 'blocked',
+    PROMPT: 'prompt',
+    LOADING: 'loading',
+    ARMED: "armed",
+    RECORDING: "recording",
+    SAVING: "saving"
+  }
+  const micStateToRecorderState = micState => ({
+    [micStates.DENIED]: states.BLOCKED,
+    [micStates.PROMPT]: states.PROMPT,
+    [micStates.GRANTED]: states.LOADING,
+    [micStates.OPEN]: states.ARMED,
+  }[micState]);
+  const [state, setState] = useState(micStateToRecorderState(micState));
+  const isBusy = () => state === states.RECORDING || state === states.SAVING;
   
+  const startRecording = async () => {
+    setState(states.RECORDING)
+    recorderRef.current.start();
+  }
+
+  const cancelRecording = () => {
+    setState(micStateToRecorderState);
+    recorderRef.current.stop();
+  }
+
   const saveRecording = async () => {
-    if (!isRecording) return;
-    setIsRecording(false);
-    // closeMic(); // if mic is closed, next recording has to open it and cuts the start!
+    setState(states.SAVING);
     const recording = await recorderRef.current.stop();
+    setState(micStateToRecorderState);
     const newSoundMetadata = await uploadRecording(recording);
     addSoundToLibrary(newSoundMetadata);
   }
-  
-  const openMic = async () => {
-    if (micRef.current) return true;
-    const recordingPermission = (await navigator.permissions.query({ name: 'microphone' })).state;
-    const prevMicId = micIdRef.current;
-    try {
-      const constraints = prevMicId ? {deviceId: prevMicId} : true;
-      const micStream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
-      micStreamRef.current = micStream;
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const deviceId = devices.find(d => d.label === micStream.getAudioTracks()[0].label).deviceId;
-      micIdRef.current = deviceId;
-      const mic = Tone.getContext().createMediaStreamSource(micStream);
-      micRef.current = mic;
-      Tone.connect(mic, recorderRef.current);
-    } catch (e) {
-      console.error("Error accessing the microphone:", e)
-    }
-    if (recordingPermission === "granted") return true;
-    closeMic();
-    return false;
+
+  if (!isBusy() && state !== micStateToRecorderState(micState)) setState(micStateToRecorderState(micState));
+  if (state === states.RECORDING && micState !== micStates.OPEN) cancelRecording();// if permission changed
+
+  const onPointerDown = () => {
+    if (state === states.ARMED) startRecording();
   }
 
-  const closeMic = () => {
-    const micStream = micStreamRef.current;
-    const mic = micRef.current;
-    if (micStreamRef) micStream.getTracks().forEach(track => track.stop());
-    if (mic) mic.disconnect();
-    micStreamRef.current = null;
-    micRef.current = null;
-  }
-  
-  const startRecording = async () => {
-    const recorder = recorderRef.current;
-    if (isRecording) return;
-    if (!await openMic()) return;
-    setIsRecording(true);
-    recorder.start();
+  const onPointerUp = () => {
+    if (state === states.PROMPT) openMic();
+    if (state === states.RECORDING) saveRecording();
   }
   
   const bind = useDrag(({ first, last }) => {
-    if (first) startRecording();
-    if (last) saveRecording();
-  }) 
+    if (first) onPointerDown();
+    if (last) onPointerUp();
+  });
   
-  return <div {...bind()} className={`${isRecording? "bg-red-500" : "bg-stone-700"} h-16 touch-none cursor-pointer`}/>
+  return <div {...bind()} className={`${state === states.RECORDING? "bg-red-500" : "bg-stone-700"} h-16 touch-none cursor-pointer`}>{state}</div>
 }
 export default Recorder;
