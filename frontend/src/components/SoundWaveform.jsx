@@ -1,7 +1,6 @@
 import { useContext, useEffect, useId, useRef, useState } from "react";
 import { getSoundColor } from "@utils/misc";
 import LibraryContext from "../LibraryContext";
-import { DISPLAYBUFFER_SIZE } from "../App"
 
 const SoundWaveform = ({ className="", soundName, loaded }) => {
   const color = useRef(getSoundColor(soundName));
@@ -9,7 +8,7 @@ const SoundWaveform = ({ className="", soundName, loaded }) => {
     color.current = getSoundColor(soundName) ?? 'text-white';
   }, [soundName]);
   
-  const { library } = useContext(LibraryContext);
+  const { library, DISPLAYBUFFER_SIZE } = useContext(LibraryContext);
   useEffect(()=> {
     if (!soundName) return;
     if (!library.get(soundName).displayBuffer) return;

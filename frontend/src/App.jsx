@@ -1,67 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as Tone from "tone";
-import { resampleArray } from './utils/math';
-import { getLibraryMetadata, getMergedSoundsMetadata } from './api';
+import { getMergedSoundsMetadata } from './api';
 import Pot from '@components/Pot';
 import Sidebar from '@components/Sidebar';
 import LibraryContext from './LibraryContext';
-
-export const DISPLAYBUFFER_SIZE = 32;
+import useLibrary from './useLibrary';
 
 function App() {
-  const [library, setLibrary] = useState(null);
+  const { library, addSoundToLibrary, DISPLAYBUFFER_SIZE } = useLibrary();
 
-  const latestLibrary = useRef(library);
-  useEffect(() => {
-    latestLibrary.current = library;
-  }, [library]);
-
-  useEffect(()=> { // init script
-    const abortController = new AbortController();
-    const signal  = abortController.signal;
-
-    ( async () => {
-      const libraryMetadata = await getLibraryMetadata(signal);
-      setLibrary(new Map());
-      Object.entries(libraryMetadata).forEach(soundMetadata=>addSoundToLibrary(soundMetadata));
-    } )();
-
+  useEffect(()=> {
     const compressor = new Tone.Compressor()
     const reverb = new Tone.Reverb({ wet: 0.5 });
     Tone.getDestination().chain(reverb, compressor);
-
-    return () => abortController.abort();
   }, []);
-
-  const addSoundToLibrary = (soundMetadata) => {
-    const [soundName, soundInfo] = soundMetadata;
-    const buffer = loadBuffer(soundName);
-    setLibrary(prev => {
-      prev.set(soundName, {...soundInfo, buffer})
-      return new Map(prev);
-    });
-  }
-
-  const loadBuffer = (soundName) => {
-    console.info(`Loading sound "${soundName}"...`);
-    const buffer = new Tone.ToneAudioBuffer("/api/library/" + soundName);
-    buffer.onload = () => {
-      document.dispatchEvent(new Event(`bufferload-${soundName}`));
-      console.info(`Sound "${soundName}" loaded!`);
-      generateDisplayBuffer(soundName);
-    };
-    return buffer;
-  }
-
-  const generateDisplayBuffer = async (soundName) => {
-    const buffer = latestLibrary.current.get(soundName).buffer;
-    const channelData = buffer.getChannelData(0);
-    const displayBuffer = resampleArray(channelData, DISPLAYBUFFER_SIZE);
-    setLibrary(prev => {
-      prev.set(soundName, {...prev.get(soundName), displayBuffer})
-      return new Map(prev);
-    });
-  }
 
   const [soundInstancesData, setSoundInstancesData] = useState(new Map());
   
@@ -111,7 +63,7 @@ function App() {
 
   return (
     <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
-    <LibraryContext.Provider value={{ library, addSoundToLibrary }}>
+    <LibraryContext.Provider value={{ library, addSoundToLibrary, DISPLAYBUFFER_SIZE }}>
       <Pot soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} removeSoundInstance={removeSoundInstance} mergeSoundInstances={mergeSoundInstances} />
       <Sidebar addSoundInstance={addSoundInstance} />
     </LibraryContext.Provider>
