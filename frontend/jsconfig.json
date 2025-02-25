@@ -3,7 +3,8 @@
       "baseUrl": "./src",
       "paths": {
         "@components/*": ["components/*"],
-        "@utils/*": ["utils/*"]
+        "@hooks/*": ["hooks/*"],
+        "@utils/*": ["utils/*"],
       }
     },
     "exclude": ["node_modules", "dist"]

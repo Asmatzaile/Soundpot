@@ -4,7 +4,7 @@ import { getMergedSoundsMetadata } from './api';
 import Pot from '@components/Pot';
 import Sidebar from '@components/Sidebar';
 import LibraryContext from './LibraryContext';
-import useLibrary from './useLibrary';
+import useLibrary from '@hooks/useLibrary';
 
 function App() {
   const { library, addSoundToLibrary, DISPLAYBUFFER_SIZE } = useLibrary();

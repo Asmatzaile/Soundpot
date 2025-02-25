@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { resampleArray } from "@utils/math";
-import { getLibraryMetadata } from "./api";
+import { getLibraryMetadata } from "../api";
 import { ToneAudioBuffer } from "tone";
 
 
