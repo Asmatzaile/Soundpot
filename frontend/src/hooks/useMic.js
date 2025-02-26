@@ -23,6 +23,7 @@ export default function useMic() {
   }[permissionState])
 
   const micRef = useRef(null);
+  const micStreamRef = useRef(null);
   const [state, setState] = useState(states.LOADING);
 
   const updateState = (newState) => {
@@ -41,7 +42,10 @@ export default function useMic() {
       updateState(permissionStateToMicState(permissionStatus.state));
     })();
 
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      closeMic();
+    } 
   }, []);
 
   const openMic = async () => {
@@ -49,6 +53,7 @@ export default function useMic() {
     try {
       const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mic = Tone.getContext().createMediaStreamSource(micStream);
+      micStreamRef.current = micStream;
       micRef.current = mic;
       updateState(states.OPEN);
       return mic;
@@ -56,6 +61,14 @@ export default function useMic() {
       console.error("Error accessing the microphone:", e)
       updateState(states.BLOCKED);
     }
+  }
+
+  const closeMic = () => {
+    if (state === states.OPEN) updateState(states.IDLE);
+    const micStream = micStreamRef.current;
+    if (micStream) micStream.getTracks().forEach(track => track.stop());
+    micStreamRef.current = null;
+    micRef.current = null;
   }
 
   return { state, states, openMic }
