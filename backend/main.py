@@ -1,6 +1,6 @@
 import os
 import io
-from pathlib import Path
+
 import json
 import logging
 from datetime import datetime
@@ -9,18 +9,13 @@ from contextlib import asynccontextmanager
 
 from pydub import AudioSegment
 
-import torch
-import torchaudio
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from stable_audio_tools.models.factory import create_model_from_config
-from stable_audio_tools.models.utils import load_ckpt_state_dict
-from stable_audio_tools.training.utils import copy_state_dict
 
-from utils import tensor_transforms
+import model_controller as model
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 
@@ -31,10 +26,7 @@ async def lifespan(app: FastAPI):
     save_library_metadata()
     logging.info(f"Library metadata loaded.")
 
-    logging.debug("Loading model...")
-    load_model()
-    logging.info(f"Model loaded. Tensor computations will run on the device {DEVICE}.")
-
+    model.load(logging)
     yield
 
 
@@ -47,43 +39,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-MODEL = None
-SAMPLE_RATE = 44100
-
-
-def load_model():
-    global MODEL
-    if MODEL is None:
-        config_path = Path("vae/vae_config.json")
-        checkpoint_path = Path("vae/vae.ckpt")
-        with config_path.open() as f:
-            config = json.load(f)
-        vae = create_model_from_config(config)
-        copy_state_dict(vae, load_ckpt_state_dict(str(checkpoint_path)))
-        MODEL = vae.to(DEVICE).eval().requires_grad_(False)
-    return MODEL
-
-
-@torch.no_grad()
-def encode_audio(tensor) -> torch.Tensor:
-    model = load_model()
-    latents = model.encode(tensor)
-    return latents
-
-async def get_tensor_of_audio(path) -> torch.Tensor:
-    try:
-        tensor, sr = torchaudio.load(path)
-    except RuntimeError:
-        raise Exception(f"File {path} not found")
-    if sr != SAMPLE_RATE:
-        resampler = torchaudio.transforms.Resample(sr, SAMPLE_RATE)
-        tensor = resampler(tensor)
-    return tensor.to(DEVICE)
-
-
 
 sounds_folder_path = './library'
 LIBRARY_METADATA = None
@@ -139,7 +94,7 @@ async def merge_sounds(filename1 : str = Form(...), filename2 : str = Form(...))
     output_filename = get_new_sound_name()
     LIBRARY_METADATA[output_filename] = "creating..."
     logging.info(f"Merging sounds {filename1} and {filename2} into {output_filename}")
-    await interpolate_sounds(sounds_folder_path+"/"+filename1, sounds_folder_path+"/"+filename2, sounds_folder_path+"/"+output_filename)
+    await model.interpolate_sounds(sounds_folder_path+"/"+filename1, sounds_folder_path+"/"+filename2, sounds_folder_path+"/"+output_filename)
     soundMetadata = {'origin': 'merge', 'parents': [filename1, filename2], 'date': datetime.now().isoformat(timespec="seconds")}
     LIBRARY_METADATA[output_filename] = soundMetadata
     save_library_metadata()
@@ -156,30 +111,6 @@ async def add_recording(recording = File(...)):
     LIBRARY_METADATA[filename] = soundMetadata
     save_library_metadata()
     return [filename, soundMetadata]
-
-async def interpolate_sounds(path1, path2, output_path):
-    tensor1 = await get_tensor_of_audio(path1)
-    tensor2 = await get_tensor_of_audio(path2)
-
-    # Ensure both audio files are the same length
-    min_length = min(tensor1.shape[1], tensor2.shape[1])
-    tensor1 = tensor1[:, :min_length]
-    tensor2 = tensor2[:, :min_length]
-
-    # Encode audio
-    encoded1 = encode_audio(tensor1.unsqueeze(0))
-    encoded2 = encode_audio(tensor2.unsqueeze(0))
-
-    # Interpolate
-    interpolated = tensor_transforms.lerp(encoded1, encoded2, 0.5)
-    
-    # Decode
-    model = load_model()
-    decoded = model.decode(interpolated)
-
-    # Convert to audio file
-    decoded = decoded.squeeze(0).cpu()
-    torchaudio.save(output_path, decoded, SAMPLE_RATE, format="wav") # restating fromat just in case
 
 if __name__ == "__main__":
     with open('../config.json') as f:
