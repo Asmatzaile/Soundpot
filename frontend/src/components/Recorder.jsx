@@ -29,18 +29,19 @@ const Recorder = () => {
   }, [micState]);
 
   const states = {
+    LOADING: 'loading',
     BLOCKED: 'blocked',
     PROMPT: 'prompt',
-    LOADING: 'loading',
     ARMED: "armed",
     RECORDING: "recording",
     SAVING: "saving"
   }
   const micStateToRecorderState = micState => ({
-    [micStates.DENIED]: states.BLOCKED,
-    [micStates.PROMPT]: states.PROMPT,
-    [micStates.GRANTED]: states.LOADING,
+    [micStates.LOADING]: states.LOADING,
+    [micStates.IDLE]: states.LOADING,
     [micStates.OPEN]: states.ARMED,
+    [micStates.PROMPT]: states.PROMPT,
+    [micStates.BLOCKED]: states.BLOCKED,
   }[micState]);
   const [state, setState] = useState(micStateToRecorderState(micState));
   const isBusy = () => state === states.RECORDING || state === states.SAVING;

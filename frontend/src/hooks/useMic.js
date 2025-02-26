@@ -3,28 +3,42 @@ import * as Tone from "tone";
 
 export default function useMic() {
   const states = {
-    DENIED: 'denied',
+    LOADING: 'loading',
+    BLOCKED: 'blocked',
     PROMPT: 'prompt',
-    GRANTED: 'granted',
+    IDLE: 'idle',
     OPEN: 'open',
   }
 
+  const permissionStates = {
+    DENIED: 'denied',
+    PROMPT: 'prompt',
+    GRANTED: 'granted',
+  }
+
+  const permissionStateToMicState = permissionState => ({
+    [permissionStates.DENIED]: states.BLOCKED,
+    [permissionStates.PROMPT]: states.PROMPT,
+    [permissionStates.GRANTED]: states.IDLE, // also could be states.OPEN, but it is IDLE when changing from another state
+  }[permissionState])
+
   const micRef = useRef(null);
-  const [state, setState] = useState(states.PROMPT);
+  const [state, setState] = useState(states.LOADING);
 
   const updateState = (newState) => {
     setState(prev => {
-      if (newState === states.PROMPT && prev !== states.PROMPT) return states.DENIED; // you have to reload the page
+      if (newState === prev) return prev;
+      if (newState === states.PROMPT && prev !== states.LOADING) return states.BLOCKED; // if it was allowed and now it isn't, you have to reload the page
       return newState;
     })
-    if (newState === states.GRANTED) openMic();
+    if (newState === states.IDLE) openMic();
   }
   useEffect(() => {
     const controller = new AbortController();
     (async()=> {
       const permissionStatus = (await navigator.permissions.query({ name: 'microphone' }));
       permissionStatus.addEventListener("change", () => updateState(permissionStatus.state), { signal: controller.signal });
-      updateState(permissionStatus.state);
+      updateState(permissionStateToMicState(permissionStatus.state));
     })();
 
     return () => controller.abort();
@@ -40,7 +54,7 @@ export default function useMic() {
       return mic;
     } catch (e) {
       console.error("Error accessing the microphone:", e)
-      updateState(states.DENIED);
+      updateState(states.BLOCKED);
     }
   }
 
