@@ -9,7 +9,6 @@ from contextlib import asynccontextmanager
 
 from pydub import AudioSegment
 
-import numpy as np
 import torch
 import torchaudio
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, Body
@@ -20,6 +19,8 @@ from pydantic import BaseModel
 from stable_audio_tools.models.factory import create_model_from_config
 from stable_audio_tools.models.utils import load_ckpt_state_dict
 from stable_audio_tools.training.utils import copy_state_dict
+
+from utils import tensor_transforms
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 
@@ -81,29 +82,6 @@ async def get_tensor_of_audio(path) -> torch.Tensor:
         resampler = torchaudio.transforms.Resample(sr, SAMPLE_RATE)
         tensor = resampler(tensor)
     return tensor.to(DEVICE)
-
-def vector_lerp(vec1, vec2, t):
-    return (1 - t) * vec1 + t * vec2
-
-
-def scale_transform(vec, factor):
-    return vec * factor
-
-
-def rotate_transform(vec, factor):
-    angle = factor * np.pi
-    cos, sin = np.cos(angle), np.sin(angle)
-    rotation_matrix = torch.tensor(
-        [[cos, -sin], [sin, cos]], device=vec.device, dtype=torch.float32
-    )
-    orig_shape = vec.shape
-    vec_2d = vec.reshape(-1, 2)
-    rotated = torch.matmul(vec_2d, rotation_matrix)
-    return rotated.reshape(orig_shape)
-
-
-def nonlinear_transform(vec, factor):
-    return torch.tanh(vec * (1 + factor))
 
 
 
@@ -193,7 +171,7 @@ async def interpolate_sounds(path1, path2, output_path):
     encoded2 = encode_audio(tensor2.unsqueeze(0))
 
     # Interpolate
-    interpolated = vector_lerp(encoded1, encoded2, 0.5)
+    interpolated = tensor_transforms.lerp(encoded1, encoded2, 0.5)
     
     # Decode
     model = load_model()

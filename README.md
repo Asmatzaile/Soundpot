@@ -85,7 +85,7 @@ This project is licensed under the GNU General Public License v3.0 (GPLv3).
 See the [LICENSE](./LICENSE) file for details.
 
 As such, all files are licensed under the GPLv3, except for the following files, from which the original code is licensed under the [MIT License](./LICENSE-MIT):
-- [backend/main.py](backend/main.py). [The original project](https://github.com/aaronabebe/latent-mixer) claims to use the MIT license but the text is not included. Copyright (c) 2024 Aaron Abebe.
+- [backend/main.py](backend/main.py), [backend/utils/tensor_transforms.py](backend/utils/tensor_transforms.py) [The original project](https://github.com/aaronabebe/latent-mixer) claims to use the MIT license but the text is not included. Copyright (c) 2024 Aaron Abebe.
 - [backend/vae_config.json](backend/vae_config.json). From [stable-audio-tools](https://github.com/Stability-AI/stable-audio-tools). Copyright (c) 2023 Stability AI.
 
 The changed code for those files is nevertheless licensed under the GPLv3.
