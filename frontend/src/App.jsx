@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import * as Tone from "tone";
-import { getMergedSoundsMetadata } from './api';
+import * as api from './api';
 import Pot from '@components/Pot';
 import Sidebar from '@components/Sidebar';
 import LibraryContext from './LibraryContext';
 import useLibrary from '@hooks/useLibrary';
 
 function App() {
-  const { library, addSoundToLibrary, DISPLAYBUFFER_SIZE } = useLibrary();
+  const { library, addSoundToLibrary, removeSoundFromLibrary, DISPLAYBUFFER_SIZE } = useLibrary();
 
   useEffect(()=> {
     const compressor = new Tone.Compressor()
@@ -45,7 +45,7 @@ function App() {
     const pos = {x: (pos1.x + pos2.x) / 2, y: (pos1.y + pos2.y) / 2};
     const newInstanceKey = addSoundInstance({soundName: undefined, pos});
 
-    const newSoundMetadata = await getMergedSoundsMetadata(soundName1, soundName2);
+    const newSoundMetadata = await api.getMergedSoundsMetadata(soundName1, soundName2);
     if (!newSoundMetadata) return removeSoundInstance(newInstanceKey); // if there was an error, abort
 
     // First, add the sound to the library, so that the buffer is loaded
@@ -60,10 +60,17 @@ function App() {
     });
     
   }
+  const removeSound = soundName => {
+    api.removeSound(soundName);
+    removeSoundFromLibrary(soundName);
+    soundInstancesData.forEach(({soundName: instanceSoundName}, key) => {
+      if (instanceSoundName === soundName) removeSoundInstance(key);
+    })
+  }
 
   return (
     <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
-    <LibraryContext.Provider value={{ library, addSoundToLibrary, DISPLAYBUFFER_SIZE }}>
+    <LibraryContext.Provider value={{ library, addSoundToLibrary, removeSound, DISPLAYBUFFER_SIZE }}>
       <Pot soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} removeSoundInstance={removeSoundInstance} mergeSoundInstances={mergeSoundInstances} />
       <Sidebar addSoundInstance={addSoundInstance} />
     </LibraryContext.Provider>

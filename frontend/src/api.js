@@ -32,3 +32,7 @@ export const uploadSound = async (sound, origin) => {
     const soundMetadata = await response.json();
     return soundMetadata;
 }
+
+export const removeSound = soundName => {
+    fetch("/api/library/" + encodeURIComponent(soundName), { method: "DELETE"});
+}

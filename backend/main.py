@@ -56,6 +56,10 @@ async def upload_sound(sound = File(...), origin = Query(None)):
     audio.export(out_path, format="wav")
     return confirm_file(out_path.name)
 
+@app.delete("/library/{filename:path}")
+async def delete_sound(filename: str):
+    libctrl.delete_sound(filename)
+
 @app.post("/merge/")
 async def merge_sounds(filename1 : str = Form(...), filename2 : str = Form(...)):
     [in_path1, in_path2, out_path] = libctrl.reserve_merge(filename1, filename2)

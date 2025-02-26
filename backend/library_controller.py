@@ -82,7 +82,12 @@ def confirm_file(filename):
     save()
     return LIBRARY_METADATA[filename]
 
-def get_path(filename):
+def delete_sound(filename):
+    get_path(filename).unlink(missing_ok=True)
+    LIBRARY_METADATA.pop(filename)
+    save()
+
+def get_path(filename) -> Path:
     return LIBRARY_PATH / filename
 
 def get_date():

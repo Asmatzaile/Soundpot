@@ -7,7 +7,7 @@ import LibraryContext from "../LibraryContext";
 import SoundWaveform from "./SoundWaveform";
 
 const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, justCollided, creationEvent }) => {
-  const { library } = useContext(LibraryContext);
+  const { library, removeSound } = useContext(LibraryContext);
 
   const playerRef = useRef(null);
   const player = playerRef.current;
@@ -60,7 +60,8 @@ const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, justC
     if (first) setZIndex(functions.getHigherZIndex(zIndex));
     if (last && !isDisposed) {
       functions.checkMerges(id);
-      if (!isSelectorInPoint("#pot", {x: xy[0], y: xy[1]})) functions.removeInstance(id);
+      if (isSelectorInPoint("#thrash", {x: xy[0], y: [xy[1]]})) removeSound(soundName);
+      else if (!isSelectorInPoint("#pot", {x: xy[0], y: xy[1]})) functions.removeInstance(id);
     }
     setDragging(active);
     posApi.start({ x, y });

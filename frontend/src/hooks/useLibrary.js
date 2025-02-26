@@ -45,6 +45,14 @@ export default function useLibrary() {
     });
   }
 
+  const removeSoundFromLibrary = (soundName) => {
+    setLibrary(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(soundName);
+      return newMap;
+    })
+  }
+
   const loadBuffer = (soundName) => {
     console.info(`Loading sound "${soundName}"...`);
     const buffer = new ToneAudioBuffer("/api/library/" + soundName);
@@ -55,5 +63,5 @@ export default function useLibrary() {
     };
     return buffer;
   }
-  return { library, addSoundToLibrary, DISPLAYBUFFER_SIZE }
+  return { library, addSoundToLibrary, removeSoundFromLibrary, DISPLAYBUFFER_SIZE }
 }

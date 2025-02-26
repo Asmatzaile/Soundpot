@@ -11,6 +11,7 @@ const SoundWaveform = ({ className="", soundName, loaded }) => {
   const { library, DISPLAYBUFFER_SIZE } = useContext(LibraryContext);
   useEffect(()=> {
     if (!soundName) return;
+    if (!library.get(soundName)) return;
     if (!library.get(soundName).displayBuffer) return;
     setWaveformLines(calcWaveformLines(library.get(soundName).displayBuffer));
   }, [library])
