@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useDrag } from "@use-gesture/react";
 import * as Tone from "tone";
-import { uploadRecording } from "../api";
+import { uploadSound } from "../api";
 import LibraryContext from "../LibraryContext";
 import useMic from "@hooks/useMic";
 
@@ -60,7 +60,7 @@ const Recorder = () => {
     setState(states.SAVING);
     const recording = await recorderRef.current.stop();
     setState(micStateToRecorderState);
-    const newSoundMetadata = await uploadRecording(recording);
+    const newSoundMetadata = await uploadSound(recording, "recording");
     addSoundToLibrary(newSoundMetadata);
   }
 

@@ -7,9 +7,9 @@ from contextlib import asynccontextmanager
 
 from pydub import AudioSegment
 
-from fastapi import FastAPI, File, Form
+from fastapi import FastAPI, File, Form, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 import model_controller as model
 import library_controller as libctrl
@@ -33,26 +33,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/library/", StaticFiles(directory=libctrl.LIBRARY_PATH)) # special characters on the filename need to addressed by the client in their requests request
-
 @app.get("/library_metadata/")
 async def serve_library_metadata():
     return libctrl.load()
+
+@app.get("/library/{filename:path}")
+async def serve_file(filename: str):
+    path = libctrl.get_path(filename)
+    if not path.exists():
+        raise HTTPException(status_code=404)
+    return FileResponse(path)
+
+@app.post("/library/")
+async def upload_sound(sound = File(...), origin = Query(None)):
+    try:
+        out_path = libctrl.reserve_file(origin)
+    except:
+        raise HTTPException(status_code=422, detail=f"Unknown origin: {origin}")
+    content = await sound.read()
+    buffer = io.BytesIO(content)
+    audio = AudioSegment.from_file(buffer)
+    audio.export(out_path, format="wav")
+    return confirm_file(out_path.name)
 
 @app.post("/merge/")
 async def merge_sounds(filename1 : str = Form(...), filename2 : str = Form(...)):
     [in_path1, in_path2, out_path] = libctrl.reserve_merge(filename1, filename2)
     logging.info(f"Merging sounds {filename1} and {filename2} into {out_path.name}")
     await model.interpolate_sounds(in_path1, in_path2, out_path)
-    return confirm_file(out_path.name)
-
-@app.post("/upload_recording/")
-async def add_recording(recording = File(...)):
-    out_path = libctrl.reserve_recording()
-    content = await recording.read()
-    buffer = io.BytesIO(content)
-    audio = AudioSegment.from_file(buffer)
-    audio.export(out_path, format="wav")
     return confirm_file(out_path.name)
 
 def confirm_file(filename):

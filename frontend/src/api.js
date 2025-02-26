@@ -22,12 +22,12 @@ export const getMergedSoundsMetadata = async (filename1, filename2) => {
     return undefined;
 }
 
-export const uploadRecording = async (recording) => {
-    const recordingData = new FormData();
-    recordingData.append("recording", recording);
-    const response = await fetch("/api/upload_recording/", {
+export const uploadSound = async (sound, origin) => {
+    const soundData = new FormData();
+    soundData.append("sound", sound);
+    const response = await fetch(`/api/library/?origin=${origin}`, {
         method: "POST",
-        body: recordingData,
+        body: soundData,
     })
     const soundMetadata = await response.json();
     return soundMetadata;

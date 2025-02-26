@@ -3,10 +3,15 @@ import os
 import json
 import logging
 from datetime import datetime
+from enum import Enum
 
 LIBRARY_PATH = Path('./library')
 LIBRARY_METADATA = None
 METADATA_PATH = LIBRARY_PATH / ".metadata.json"
+
+class Origin(str, Enum):
+    MERGE = "merge"
+    RECORDING = "recording"
 
 def load(extra_logging=None, save_after_load=True):
     global LIBRARY_METADATA
@@ -57,23 +62,28 @@ def get_new_filename():
 # must be confirmed with confirm_file
 def reserve_merge(parentname1, parentname2):
     filename = get_new_filename()
-    soundMetadata = {'origin': 'merge', 'parents': [parentname1, parentname2]}
+    soundMetadata = {'origin': Origin.MERGE, 'parents': [parentname1, parentname2]}
     LIBRARY_METADATA[filename] = soundMetadata
     save()
-    return [LIBRARY_PATH / parentname1, LIBRARY_PATH / parentname2, LIBRARY_PATH / filename]
+    return [get_path(parentname1), get_path(parentname2), get_path(filename)]
 
 # must be confirmed with confirm_file
-def reserve_recording():
+def reserve_file(origin):
+    if origin not in Origin._value2member_map_:
+        raise TypeError
     filename = get_new_filename()
-    soundMetadata = {'origin': 'recording'}
+    soundMetadata = {'origin': origin}
     LIBRARY_METADATA[filename] = soundMetadata
     save()
-    return LIBRARY_PATH / filename
+    return get_path(filename)
 
 def confirm_file(filename):
     LIBRARY_METADATA[filename]['date'] = get_date()
     save()
     return LIBRARY_METADATA[filename]
+
+def get_path(filename):
+    return LIBRARY_PATH / filename
 
 def get_date():
     return datetime.now().isoformat(timespec="seconds")
