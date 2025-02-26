@@ -56,8 +56,8 @@ SAMPLE_RATE = 44100
 def load_model():
     global MODEL
     if MODEL is None:
-        config_path = Path("vae_config.json")
-        checkpoint_path = Path("vae.ckpt")
+        config_path = Path("vae/vae_config.json")
+        checkpoint_path = Path("vae/vae.ckpt")
         with config_path.open() as f:
             config = json.load(f)
         vae = create_model_from_config(config)

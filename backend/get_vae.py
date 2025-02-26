@@ -28,5 +28,5 @@ if not logged_in:
 print("Getting model...")
 model, model_config = get_pretrained_model("stabilityai/stable-audio-open-1.0")
 print("Saving VAE...")
-torch.save({"state_dict": model.pretransform.model.state_dict()}, "vae.ckpt")
+torch.save({"state_dict": model.pretransform.model.state_dict()}, "vae/vae.ckpt")
 print("VAE saved.")
