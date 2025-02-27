@@ -1,4 +1,4 @@
-export const dispatchPointerEvent = (target, e) => {
+export const dispatchPointerEvent = (target=document, e) => {
     const clonedEvent = new PointerEvent(e.type, {
     bubbles: e.bubbles,
     cancelable: e.cancelable,
@@ -14,6 +14,12 @@ export const dispatchPointerEvent = (target, e) => {
     pressure: e.pressure,
     })
     target.dispatchEvent(clonedEvent);
+}
+
+export const dispatchDragEvent = (target=document, e) => {
+    const {type, clientX, clientY} = e;
+    const event = new DragEvent(type, { bubbles: true, clientX, clientY });
+    target.dispatchEvent(event);
 }
 
 export const getElementCenter = (element) => {

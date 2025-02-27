@@ -2,12 +2,12 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { animated, to, useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 import * as Tone from "tone";
-import { dispatchPointerEvent, isSelectorInPoint } from "@utils/dom";
+import { dispatchPointerEvent, dispatchDragEvent } from "@utils/dom";
 import LibraryContext from "../LibraryContext";
 import SoundWaveform from "./SoundWaveform";
 
 const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, creationEvent }) => {
-  const { library, removeSound } = useContext(LibraryContext);
+  const { library } = useContext(LibraryContext);
 
   const playerRef = useRef(null);
   const player = playerRef.current;
@@ -22,7 +22,7 @@ const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, creat
 
   useEffect(() => {
     if (isDisposed) return;
-    functions.updateInstance(id, {isBusy: !loaded || dragging});
+    functions.update({isBusy: !loaded || dragging});
   }, [loaded, dragging, isDisposed]);
 
   useEffect(() => {
@@ -43,8 +43,7 @@ const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, creat
   useEffect(()=> {
     onChangeRef.current = () => {
       if (isDisposed) return;
-      functions.updateInstance(id, {pos: {x: x.get(), y: y.get()}});
-      if (!dragging) functions.checkMerges(id);
+      functions.update({pos: {x: x.get(), y: y.get()}});
     }
   }, [dragging, functions, isDisposed]) // functions is also a dep cause it relies on current values of soundInstancesData
 
@@ -63,27 +62,31 @@ const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, creat
     player?.start();
     setJustCollided(false);
   }, [justCollided])
-
-  const bind = useDrag(({ active, first, last, xy, offset: [x, y] }) => {
-    if (first) setZIndex(functions.getHigherZIndex(zIndex));
-    if (last && !isDisposed) {
-      functions.checkMerges(id);
-      if (isSelectorInPoint("#thrash", {x: xy[0], y: [xy[1]]})) removeSound(soundName);
-      else if (!isSelectorInPoint("#pot", {x: xy[0], y: xy[1]})) functions.removeInstance(id);
-    }
-    setDragging(active);
-    posApi.start({ x, y });
-    },
-    {from: () => [x.get(), y.get()]}
-  )
-
+  
   const divRef = useRef(null);
   useEffect(() => {
     if (!creationEvent) return;
     dispatchPointerEvent(divRef.current, creationEvent)
   }, [])
+  const bind = useDrag(({ first, last, xy, offset: [x, y] }) => {
+    const [clientX, clientY] = xy;
+    if (first) dispatchDragEvent(divRef.current, {type: "dragstart", clientX, clientY});
+    else if (last && !isDisposed) dispatchDragEvent(divRef.current, {type: "dragend", clientX, clientY});
+    else if (!isDisposed) dispatchDragEvent(divRef.current, {type: "drag", clientX, clientY});
 
-  return <animated.div {...bind()} ref={divRef}
+    posApi.start({ x, y });
+    },
+    {from: () => [x.get(), y.get()]}
+  )
+
+  const handleDragStart = () => {
+    setZIndex(functions.getHigherZIndex(zIndex));
+    setDragging(true)
+  }
+  const handleDragEnd = () => setDragging(false);
+
+  return <animated.div {...bind()} ref={divRef} data-instance-id={id} data-sound={soundName}
+    onDragStart={handleDragStart} onDragEnd={handleDragEnd}
     className={`absolute ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none top-0`}
     style={{ ...style, zIndex, transform: to([x, y, style.transform, transform], (x, y, tf1, tf2) => `translate3d(${x}px, ${y}px, 0) ${tf1} ${tf2}`) }} >
       <SoundWaveform soundName={soundName} loaded={loaded} className="size-24 -translate-x-1/2 -translate-y-1/2 absolute"/>
