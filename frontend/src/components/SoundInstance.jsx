@@ -6,8 +6,9 @@ import { dispatchPointerEvent, dispatchDragEvent } from "@utils/dom";
 import LibraryContext from "@context/LibraryContext";
 import SoundWaveform from "./SoundWaveform";
 
-const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, creationEvent }) => {
+const SoundInstance = ({ object, style, isDisposed }) => {
   const { library } = useContext(LibraryContext);
+  const {id, soundName, pos, creationEvent, zIndex, bringToFront, update} = object;
 
   const playerRef = useRef(null);
   const player = playerRef.current;
@@ -22,7 +23,8 @@ const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, creat
 
   useEffect(() => {
     if (isDisposed) return;
-    functions.update({isBusy: !loaded || dragging});
+    object.isBusy = !loaded || dragging;
+    object.update(object);
   }, [loaded, dragging, isDisposed]);
 
   useEffect(() => {
@@ -33,8 +35,6 @@ const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, creat
     return () => playerRef.current?.dispose();
   }, [soundName])
   if (isDisposed) playerRef.current?.stop()
-  
-  const [zIndex, setZIndex] = useState(0);
 
   const onChangeRef = useRef(null);
   const [{ x, y }, posApi] = useSpring(() => ({ x: pos.x, y: pos.y, onChange: () => onChangeRef?.current()}))
@@ -43,9 +43,10 @@ const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, creat
   useEffect(()=> {
     onChangeRef.current = () => {
       if (isDisposed) return;
-      functions.update({pos: {x: x.get(), y: y.get()}});
+      object.pos = {x: x.get(), y: y.get()};
+      object.update(object);
     }
-  }, [dragging, functions, isDisposed]) // functions is also a dep cause it relies on current values of soundInstancesData
+  }, [dragging, object, isDisposed]);
 
   const [justCollided, setJustCollided] = useState(false);
   useEffect(() => {
@@ -80,7 +81,7 @@ const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, creat
   )
 
   const handleDragStart = () => {
-    setZIndex(functions.getHigherZIndex(zIndex));
+    object.bringToFront();
     setDragging(true)
   }
   const handleDragEnd = () => setDragging(false);

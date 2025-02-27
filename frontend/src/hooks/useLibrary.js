@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { resampleArray } from "@utils/math";
-import { getLibraryMetadata } from "../api";
+import * as api from "../api";
 import { ToneAudioBuffer } from "tone";
 
 
@@ -16,7 +16,7 @@ export default function useLibrary() {
   useEffect(()=> {
     const controller = new AbortController();
     ( async () => {
-      const libraryMetadata = await getLibraryMetadata(controller.signal);
+      const libraryMetadata = await api.getLibraryMetadata(controller.signal);
       setLibrary(new Map());
       Object.entries(libraryMetadata).forEach(soundMetadata=>addSoundToLibrary(soundMetadata));
     } )();
@@ -46,6 +46,7 @@ export default function useLibrary() {
   }
 
   const removeSoundFromLibrary = (soundName) => {
+    api.removeSound(soundName);
     setLibrary(prev => {
       const newMap = new Map(prev);
       newMap.delete(soundName);
