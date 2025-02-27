@@ -1,6 +1,6 @@
 import io
-
 import json
+from urllib.parse import unquote as decodeuri # because starlette doesn't decode spaces well
 import logging
 import uvicorn
 from contextlib import asynccontextmanager
@@ -39,6 +39,7 @@ async def serve_library_metadata():
 
 @app.get("/library/{filename:path}")
 async def serve_file(filename: str):
+    filename = decodeuri(filename)
     path = libctrl.get_path(filename)
     if not path.exists():
         raise HTTPException(status_code=404)
@@ -58,10 +59,13 @@ async def upload_sound(sound = File(...), origin = Query(None)):
 
 @app.delete("/library/{filename:path}")
 async def delete_sound(filename: str):
+    filename = decodeuri(filename)
     libctrl.delete_sound(filename)
 
 @app.post("/merge/")
 async def merge_sounds(filename1 : str = Form(...), filename2 : str = Form(...)):
+    filename1 = decodeuri(filename1)
+    filename2 = decodeuri(filename2)
     [in_path1, in_path2, out_path] = libctrl.reserve_merge(filename1, filename2)
     logging.info(f"Merging sounds {filename1} and {filename2} into {out_path.name}")
     await model.interpolate_sounds(in_path1, in_path2, out_path)
