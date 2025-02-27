@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useDrag } from "@use-gesture/react";
 import * as Tone from "tone";
 import { uploadSound } from "../api";
-import LibraryContext from "../LibraryContext";
+import LibraryContext from "@context/LibraryContext";
 import useMic from "@hooks/useMic";
 
 const Recorder = () => {

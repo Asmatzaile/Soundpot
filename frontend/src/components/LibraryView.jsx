@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import LibrarySound from "./LibrarySound";
-import LibraryContext from "../LibraryContext";
+import LibraryContext from "@context/LibraryContext";
 
 const LibraryView = ({ addSoundInstance }) => {
   const { library } = useContext(LibraryContext);

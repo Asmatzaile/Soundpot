@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { getElementCenter } from "@utils/dom";
-import LibraryContext from "../LibraryContext";
+import LibraryContext from "@context/LibraryContext";
 import SoundWaveform from "./SoundWaveform";
 
 const LibrarySound = ({ soundName, addSoundInstance }) => {

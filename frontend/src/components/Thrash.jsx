@@ -1,5 +1,5 @@
 import { useContext, useEffect } from "react"
-import LibraryContext from "../LibraryContext"
+import LibraryContext from "@context/LibraryContext"
 import { isSelectorInPoint } from "@utils/dom";
 
 export default function Thrash() {

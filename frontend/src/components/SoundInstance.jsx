@@ -3,7 +3,7 @@ import { animated, to, useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 import * as Tone from "tone";
 import { dispatchPointerEvent, dispatchDragEvent } from "@utils/dom";
-import LibraryContext from "../LibraryContext";
+import LibraryContext from "@context/LibraryContext";
 import SoundWaveform from "./SoundWaveform";
 
 const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, creationEvent }) => {

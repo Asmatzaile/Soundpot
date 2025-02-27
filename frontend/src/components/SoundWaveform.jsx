@@ -1,6 +1,6 @@
 import { useContext, useEffect, useId, useRef, useState } from "react";
 import { getSoundColor } from "@utils/misc";
-import LibraryContext from "../LibraryContext";
+import LibraryContext from "@context/LibraryContext";
 
 const SoundWaveform = ({ className="", soundName, loaded }) => {
   const color = useRef(getSoundColor(soundName));

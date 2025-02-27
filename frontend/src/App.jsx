@@ -3,7 +3,7 @@ import * as Tone from "tone";
 import * as api from './api';
 import Pot from '@components/Pot';
 import Sidebar from '@components/Sidebar';
-import LibraryContext from './LibraryContext';
+import LibraryContext from '@context/LibraryContext';
 import useLibrary from '@hooks/useLibrary';
 
 function App() {
