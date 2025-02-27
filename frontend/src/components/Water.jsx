@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import Ripple from "./Ripple";
 import { doCirclesCollide, isCircleInCircle } from "@utils/math";
 
-const Water = ({ soundInstancesData, setSoundInstancesData}) => {
+class RippleCollision extends Event {
+  constructor(rippleId, soundInstanceId) {
+    super("ripplecollision");
+    this.rippleId = rippleId;
+    this.soundInstanceId = soundInstanceId;
+  }
+}
+
+const Water = ({ soundInstancesData }) => {
   const [ripplesData, setRipplesData] = useState(new Map());
   const [maxRippleSize, setMaxRippleSize] = useState();
   const addRipple = (rippleData) => {
@@ -23,13 +31,13 @@ const Water = ({ soundInstancesData, setSoundInstancesData}) => {
     updateSize: (key, newSize) => {
       const newRippleData = {...ripplesData.get(key), size: newSize}
       ripplesData.set(key, newRippleData);
-      checkRippleCollisions(newRippleData);
+      checkRippleCollisions(key, newRippleData);
       setRipplesData(new Map(ripplesData));
     },
     getMaxSize: () => maxRippleSize,
   }
   
-  const checkRippleCollisions = (rippleData) => {
+  const checkRippleCollisions = (rippleKey, rippleData) => {
     rippleData.collidedWith ??= new Set(); // make sure the previous collision array exists
     
     [...soundInstancesData.entries()].forEach(([instanceKey, instanceData])=> {
@@ -41,8 +49,8 @@ const Water = ({ soundInstancesData, setSoundInstancesData}) => {
       if (rippleData.collidedWith.has(instanceKey)) return; // only care about new collisions
       if (!doCirclesCollide(ripplePos.x, ripplePos.y, rippleSize/2, instanceData.pos.x, instanceData.pos.y, 48)) return;
       if (rippleSize/2 > 48 && isCircleInCircle(ripplePos.x, ripplePos.y, rippleSize/2, instanceData.pos.x, instanceData.pos.y, 48)) return; // don't account for when perimeters aren't touching
-      const newInstanceData = {...soundInstancesData.get(instanceKey), justCollided: true};
-      setSoundInstancesData(new Map(soundInstancesData.set(instanceKey, newInstanceData)));
+      const collisionEvent = new RippleCollision(rippleKey, instanceKey);
+      document.dispatchEvent(collisionEvent);
       rippleData.collidedWith.add(instanceKey)
     });
   }

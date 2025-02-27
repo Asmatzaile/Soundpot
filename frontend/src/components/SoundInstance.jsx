@@ -6,7 +6,7 @@ import { dispatchPointerEvent, isSelectorInPoint } from "@utils/dom";
 import LibraryContext from "../LibraryContext";
 import SoundWaveform from "./SoundWaveform";
 
-const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, justCollided, creationEvent }) => {
+const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, creationEvent }) => {
   const { library, removeSound } = useContext(LibraryContext);
 
   const playerRef = useRef(null);
@@ -48,12 +48,20 @@ const SoundInstance = ({ id, style, isDisposed, soundName, pos, functions, justC
     }
   }, [dragging, functions, isDisposed]) // functions is also a dep cause it relies on current values of soundInstancesData
 
+  const [justCollided, setJustCollided] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    document.addEventListener("ripplecollision", e => {
+      if (e.soundInstanceId === id) setJustCollided(true);
+    }, { signal: controller.signal });
+    return () => controller.abort();
+  })
   const [{ transform }, transformApi] = useSpring(() => ({transform: "scale(1)"}));
   useEffect(()=> {
     transformApi.start({transform: `scale(${justCollided ? '1.3' : '1'})`, immediate: justCollided})
     if (!justCollided) return;
     player?.start();
-    functions.updateInstance(id, {justCollided: false})
+    setJustCollided(false);
   }, [justCollided])
 
   const bind = useDrag(({ active, first, last, xy, offset: [x, y] }) => {

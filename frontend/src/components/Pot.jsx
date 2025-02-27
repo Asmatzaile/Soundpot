@@ -42,7 +42,7 @@ const Pot = ({ soundInstancesData, setSoundInstancesData, removeSoundInstance, m
   
   return(
     <div id="pot" className="bg-stone-900">
-      <Water soundInstancesData={soundInstancesData} setSoundInstancesData={setSoundInstancesData} />
+      <Water soundInstancesData={soundInstancesData} />
       {transitions((style, [key, instanceData]) => <AnimatedSoundInstance style={{...style}} key={key} id={key}
         functions={instanceFunctions} {...instanceData} isDisposed={!soundInstancesData.has(key)} />
       )}
