@@ -10,6 +10,7 @@ export default function Thrash() {
     document.addEventListener("dragend", (e) => {
         const { clientX: x, clientY: y, target} = e;
         const soundName = target.dataset.sound;
+        if (soundName === undefined) return; // this would happen, for example, if we were recording and automatically discarded it
         if (isSelectorInPoint("#thrash", {x, y})) removeSound(soundName);
     }, {signal: controller.signal})
     return () => controller.abort();

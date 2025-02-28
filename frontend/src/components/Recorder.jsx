@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import * as Tone from "tone";
 import LibraryContext from "@context/LibraryContext";
 import useMic from "@hooks/useMic";
-import { getElementCenter } from "@utils/dom";
+import { getElementCenter, isSelectorInPoint } from "@utils/dom";
 
 const Recorder = ({ instanceManager }) => {
   const { addSoundToLibrary } = useContext(LibraryContext);
@@ -43,6 +43,8 @@ const Recorder = ({ instanceManager }) => {
     [micStates.BLOCKED]: states.BLOCKED,
   }[micState]);
   const [state, setState] = useState(micStateToRecorderState(micState));
+  const statesRef = useRef({state, micState});// because of document.addEventListener in statRecording. TODO: is there a better way?
+  statesRef.current = {state, micState};
   const isBusy = () => state === states.RECORDING || state === states.SAVING;
 
   const divRef = useRef(null);
@@ -56,19 +58,19 @@ const Recorder = ({ instanceManager }) => {
     const creationEvent = instanceManager.creationEvents.RECORDER;
     Object.assign(creationEvent, e);
     instanceKeyRef.current = instanceManager.add({ pos, creationEvent });
-    document.addEventListener("pointerup", () => onPointerUp(), {once: true})
+    document.addEventListener("pointerup", onPointerUp, {once: true})
   }
 
   const stopRecording = () => {
-    if (state === states.RECORDING) recorderRef.current.stop();
-    setState(micStateToRecorderState);
+    if (statesRef.current.state === states.RECORDING) recorderRef.current.stop();
+    setState(micStateToRecorderState(statesRef.current.micState));
     instanceKeyRef.current = undefined;
   }
 
   const cancelRecording = () => {
     const instanceKey = instanceKeyRef.current;
     stopRecording();
-    if (recordingInstance === undefined) return;
+    if (instanceKey === undefined) return;
     instanceManager.remove(instanceKey)
   }
 
@@ -76,11 +78,13 @@ const Recorder = ({ instanceManager }) => {
     setState(states.SAVING);
     const recording = await recorderRef.current.stop();
     const instanceKey = instanceKeyRef.current;
-    stopRecording();
     const newSoundName = await addSoundToLibrary(recording, "recording");
     const instance = instanceManager.instances.get(instanceKey);
-    instance.soundName = newSoundName;
-    instanceManager.update(instanceKey, instance);
+    if (instance) { // if it was left inside the pot
+      instance.soundName = newSoundName;
+      instanceManager.update(instanceKey, instance);
+    }
+    stopRecording();
   }
 
   if (!isBusy() && state !== micStateToRecorderState(micState)) setState(micStateToRecorderState(micState));
@@ -90,11 +94,14 @@ const Recorder = ({ instanceManager }) => {
     if (state === states.ARMED) startRecording(e);
   }
 
-  const stateRef = useRef(state);
-  stateRef.current = state;
-  const onPointerUp = () => {
-    if (stateRef.current === states.PROMPT) openMic();
-    if (stateRef.current === states.RECORDING) saveRecording(); // because of document.addEventListener in statRecording. TODO: is there a better way?
+  const onPointerUp = (e) => {
+    const state = statesRef.current.state;
+    if (state === states.PROMPT) openMic();
+    if (state === states.RECORDING) {
+      const { clientX: x, clientY: y} = e;
+      if (isSelectorInPoint("#thrash", {x, y})) cancelRecording();
+      else saveRecording();
+    }
   }
   
   return <div ref={divRef} onPointerDown={onPointerDown} onPointerUp={onPointerUp}
