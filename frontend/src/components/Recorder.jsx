@@ -7,7 +7,7 @@ import { getElementCenter, isSelectorInPoint } from "@utils/dom";
 const Recorder = ({ instanceManager }) => {
   const { addSoundToLibrary } = useContext(LibraryContext);
 
-  const { state: micState, states: micStates, openMic } = useMic();
+  const { state: micState, states: micStates, openMic, mic } = useMic();
 
   const recorderRef = useRef(null);
   useEffect(() => {
@@ -18,12 +18,8 @@ const Recorder = ({ instanceManager }) => {
     }
   }, []);
   useEffect(() => {
-    if (micState !== micStates.GRANTED) return;
-    let mic;
-    (async() => {
-      mic = await openMic();
-      Tone.connect(mic, recorderRef.current);
-    })
+    if (micState !== micStates.OPEN) return;
+    Tone.connect(mic, recorderRef.current);
     return () => mic ? Tone.disconnect(mic, recorderRef.current) : undefined;
   }, [micState]);
 

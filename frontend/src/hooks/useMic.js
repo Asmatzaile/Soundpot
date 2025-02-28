@@ -71,5 +71,5 @@ export default function useMic() {
     micRef.current = null;
   }
 
-  return { state, states, openMic }
+  return { state, states, openMic, get mic() { return micRef.current } }
 }
