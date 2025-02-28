@@ -7,8 +7,8 @@ import useLibrary from '@hooks/useLibrary';
 import { useSoundInstanceManager } from '@hooks/useSoundInstanceManager';
 
 function App() {
-  const { library, addSoundToLibrary, removeSoundFromLibrary, DISPLAYBUFFER_SIZE } = useLibrary();
-  const instanceManager = useSoundInstanceManager(addSoundToLibrary);
+  const library = useLibrary();
+  const instanceManager = useSoundInstanceManager(library.merge);
 
   useEffect(()=> {
     const compressor = new Tone.Compressor()
@@ -17,17 +17,17 @@ function App() {
   }, []);
   
 
-  const loaded = library !== null
+  const loaded = library.data !== null
   if (!loaded) return <main className="min-h-dvh grid place-content-center" >Loading...</main>
 
   const removeSound = soundName => {
-    removeSoundFromLibrary(soundName);
+    library.remove(soundName);
     instanceManager.removeAllWithSound(soundName);
   }
 
   return (
     <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
-    <LibraryContext.Provider value={{ library, addSoundToLibrary, removeSound, DISPLAYBUFFER_SIZE }}>
+    <LibraryContext.Provider value={{ library: library.data, addSoundToLibrary: library.add, removeSound, DISPLAYBUFFER_SIZE: library.DISPLAYBUFFER_SIZE }}>
       <Pot soundInstancesData={instanceManager.instances} removeSoundInstance={instanceManager.remove} mergeIfPossible={instanceManager.mergeIfPossible} />
       <Sidebar addSoundInstance={instanceManager.add} />
     </LibraryContext.Provider>

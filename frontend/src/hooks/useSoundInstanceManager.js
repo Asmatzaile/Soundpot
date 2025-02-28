@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import * as api from '../api'
 import { doCirclesCollide } from "@utils/math";
 
 const makeInstance = (key, soundName, pos, creationEvent, getHigherZ, update, getInstances) => ({
@@ -26,7 +25,7 @@ const makeInstance = (key, soundName, pos, creationEvent, getHigherZ, update, ge
 })
 
 
-export function useSoundInstanceManager(addSoundToLibrary) {
+export function useSoundInstanceManager(mergeSounds) {
     const [instances, setInstances] = useState(new Map());
 
     const [lastInstanceId, setLastInstanceId] = useState(-1);
@@ -80,7 +79,7 @@ export function useSoundInstanceManager(addSoundToLibrary) {
         })
     }
 
-    const merge = async (key1, key2) => {
+    const mergeInstances = async (key1, key2) => {
         const { soundName: soundName1, pos: pos1 } = instances.get(key1);
         const { soundName: soundName2, pos: pos2 } = instances.get(key2);
 
@@ -89,14 +88,9 @@ export function useSoundInstanceManager(addSoundToLibrary) {
         const pos = { x: (pos1.x + pos2.x) / 2, y: (pos1.y + pos2.y) / 2 };
         const newInstanceKey = add({ pos });
 
-        const newSoundMetadata = await api.getMergedSoundsMetadata(soundName1, soundName2);
-        if (!newSoundMetadata) return remove(newInstanceKey); // if there was an error, abort
+        const newSoundName = await mergeSounds(soundName1, soundName2);
+        if (newSoundName === undefined) return remove(newInstanceKey); // if there was an error, abort
 
-        // First, add the sound to the library, so that the buffer is loaded
-        addSoundToLibrary(newSoundMetadata);
-
-        // Then, update instance, that can access the new buffer
-        const newSoundName = newSoundMetadata[0];
         setInstances(prev => {
             if (!prev.has(newInstanceKey)) return prev; // Don't try if it was removed while the sound was being created
             const updatedNewInstance = { ...prev.get(newInstanceKey), soundName: newSoundName };
@@ -106,7 +100,7 @@ export function useSoundInstanceManager(addSoundToLibrary) {
 
     const mergeIfPossible = (key) => {
         const collidingKey = instances.get(key).getCollidingKeys()[0];
-        if (collidingKey !== undefined) merge(key, collidingKey)
+        if (collidingKey !== undefined) mergeInstances(key, collidingKey)
     }
 
     return { instances, update, add, remove, removeAllWithSound, mergeIfPossible }

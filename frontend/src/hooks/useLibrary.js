@@ -18,7 +18,7 @@ export default function useLibrary() {
     ( async () => {
       const libraryMetadata = await api.getLibraryMetadata(controller.signal);
       setLibrary(new Map());
-      Object.entries(libraryMetadata).forEach(soundMetadata=>addSoundToLibrary(soundMetadata));
+      Object.entries(libraryMetadata).forEach(soundMetadata=>add(soundMetadata));
     } )();
 
     return () => controller.abort();
@@ -35,7 +35,7 @@ export default function useLibrary() {
     });
   }
 
-  const addSoundToLibrary = (soundMetadata) => {
+  const add = (soundMetadata) => {
     const [soundName, soundInfo] = soundMetadata;
     const buffer = loadBuffer(soundName);
     setLibrary(prev => {
@@ -43,15 +43,23 @@ export default function useLibrary() {
       newMap.set(soundName, {...soundInfo, buffer});
       return newMap;
     });
+    return soundName;
   }
 
-  const removeSoundFromLibrary = (soundName) => {
+  const remove = (soundName) => {
     api.removeSound(soundName);
     setLibrary(prev => {
       const newMap = new Map(prev);
       newMap.delete(soundName);
       return newMap;
     })
+  }
+
+  const merge = async(soundName1, soundName2) => {
+    const newSoundMetadata = await api.getMergedSoundsMetadata(soundName1, soundName2);
+    if (!newSoundMetadata) return undefined;
+    const newSoundName = add(newSoundMetadata);
+    return newSoundName;
   }
 
   const loadBuffer = (soundName) => {
@@ -64,5 +72,6 @@ export default function useLibrary() {
     };
     return buffer;
   }
-  return { library, addSoundToLibrary, removeSoundFromLibrary, DISPLAYBUFFER_SIZE }
+
+  return { data: library, add, remove, merge, DISPLAYBUFFER_SIZE }
 }
