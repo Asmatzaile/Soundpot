@@ -4,6 +4,7 @@ import { doCirclesCollide } from "@utils/math";
 const creationEvents = {
     get LIBRARY() { return { origin: "library" } },
     get MERGE() { return { origin: "merge" } },
+    get RECORDER() { return { origin: "recorder" } },
 }
 
 const makeInstance = (key, soundName, pos, creationEvent, getHigherZ, update, getInstances) => ({
@@ -108,5 +109,8 @@ export function useSoundInstanceManager(mergeSounds) {
         if (collidingKey !== undefined) mergeInstances(key, collidingKey)
     }
 
-    return { instances, update, add, remove, removeAllWithSound, mergeIfPossible, creationEvents }
+    const instancesRef = useRef(instances);
+    instancesRef.current = instances;
+
+    return { get instances () { return instancesRef.current}, update, add, remove, removeAllWithSound, mergeIfPossible, creationEvents }
 }

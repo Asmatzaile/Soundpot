@@ -1,11 +1,11 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { useDrag } from "@use-gesture/react";
 import * as Tone from "tone";
 import { uploadSound } from "../api";
 import LibraryContext from "@context/LibraryContext";
 import useMic from "@hooks/useMic";
+import { getElementCenter } from "@utils/dom";
 
-const Recorder = () => {
+const Recorder = ({ instanceManager }) => {
   const { addSoundToLibrary } = useContext(LibraryContext);
 
   const { state: micState, states: micStates, openMic } = useMic();
@@ -45,42 +45,61 @@ const Recorder = () => {
   }[micState]);
   const [state, setState] = useState(micStateToRecorderState(micState));
   const isBusy = () => state === states.RECORDING || state === states.SAVING;
+
+  const divRef = useRef(null);
   
-  const startRecording = async () => {
+  const instanceKeyRef = useRef();
+  const startRecording = async (e) => {
     setState(states.RECORDING)
     recorderRef.current.start();
+
+    const pos = {x: getElementCenter(divRef.current).x, y: getElementCenter(divRef.current).y}
+    const creationEvent = instanceManager.creationEvents.RECORDER;
+    Object.assign(creationEvent, e);
+    instanceKeyRef.current = instanceManager.add({ pos, creationEvent });
+    document.addEventListener("pointerup", () => onPointerUp(), {once: true})
+  }
+
+  const stopRecording = () => {
+    if (state === states.RECORDING) recorderRef.current.stop();
+    setState(micStateToRecorderState);
+    instanceKeyRef.current = undefined;
   }
 
   const cancelRecording = () => {
-    setState(micStateToRecorderState);
-    recorderRef.current.stop();
+    const instanceKey = instanceKeyRef.current;
+    stopRecording();
+    if (recordingInstance === undefined) return;
+    instanceManager.remove(instanceKey)
   }
 
   const saveRecording = async () => {
     setState(states.SAVING);
     const recording = await recorderRef.current.stop();
-    setState(micStateToRecorderState);
+    const instanceKey = instanceKeyRef.current;
+    stopRecording();
     const newSoundMetadata = await uploadSound(recording, "recording");
     addSoundToLibrary(newSoundMetadata);
+    const instance = instanceManager.instances.get(instanceKey);
+    instance.soundName = newSoundMetadata[0];
+    instanceManager.update(instanceKey, instance);
   }
 
   if (!isBusy() && state !== micStateToRecorderState(micState)) setState(micStateToRecorderState(micState));
   if (state === states.RECORDING && micState !== micStates.OPEN) cancelRecording();// if permission changed
 
-  const onPointerDown = () => {
-    if (state === states.ARMED) startRecording();
+  const onPointerDown = (e) => {
+    if (state === states.ARMED) startRecording(e);
   }
 
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const onPointerUp = () => {
-    if (state === states.PROMPT) openMic();
-    if (state === states.RECORDING) saveRecording();
+    if (stateRef.current === states.PROMPT) openMic();
+    if (stateRef.current === states.RECORDING) saveRecording(); // because of document.addEventListener in statRecording. TODO: is there a better way?
   }
   
-  const bind = useDrag(({ first, last }) => {
-    if (first) onPointerDown();
-    if (last) onPointerUp();
-  });
-  
-  return <div {...bind()} className={`${state === states.RECORDING? "bg-red-500" : "bg-stone-700"} h-16 touch-none cursor-pointer`}>{state}</div>
+  return <div ref={divRef} onPointerDown={onPointerDown} onPointerUp={onPointerUp}
+  className={`${state === states.RECORDING? "bg-red-500" : "bg-stone-700"} h-16 touch-none cursor-pointer`}>{state}</div>
 }
 export default Recorder;
