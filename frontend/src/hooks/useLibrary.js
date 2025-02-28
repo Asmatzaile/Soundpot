@@ -67,12 +67,13 @@ export default function useLibrary() {
     return newSoundName;
   }
 
+  const verboseOutput = false;
   const loadBuffer = (soundName) => {
-    console.info(`Loading sound "${soundName}"...`);
+    if (verboseOutput) console.info(`Loading sound "${soundName}"...`);
     const buffer = new ToneAudioBuffer("/api/library/" + soundName);
     buffer.onload = () => {
       document.dispatchEvent(new Event(`bufferload-${soundName}`));
-      console.info(`Sound "${soundName}" loaded!`);
+      if (verboseOutput) console.info(`Sound "${soundName}" loaded!`);
       generateDisplayBuffer(soundName);
     };
     return buffer;
