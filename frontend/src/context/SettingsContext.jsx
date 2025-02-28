@@ -4,6 +4,7 @@ const SettingsContext = createContext();
 
 export const SettingsProvider = ({ children }) => {
   const [settings, setSettings] = useState({
+    micDelay: 0,
   });
 
   const updateSettings = (newSettings) => {

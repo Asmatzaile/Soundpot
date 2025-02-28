@@ -8,3 +8,5 @@ export const getSoundColor = (soundName) => {
 const getUnicodeSum = (string) => {
     return Array.from(string).reduce((sum, char) => sum + char.codePointAt(0), 0)
 }
+
+export const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));

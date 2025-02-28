@@ -2,9 +2,12 @@ import { useContext, useEffect, useRef, useState } from "react";
 import * as Tone from "tone";
 import LibraryContext from "@context/LibraryContext";
 import useMic from "@hooks/useMic";
+import { useSettings } from "@context/SettingsContext";
 import { getElementCenter, isSelectorInPoint } from "@utils/dom";
+import { sleep } from "@utils/misc";
 
 const Recorder = ({ instanceManager }) => {
+  const { settings } = useSettings();
   const { addSoundToLibrary } = useContext(LibraryContext);
 
   const { state: micState, states: micStates, openMic, mic } = useMic();
@@ -48,13 +51,13 @@ const Recorder = ({ instanceManager }) => {
   const instanceKeyRef = useRef();
   const startRecording = async (e) => {
     setState(states.RECORDING)
-    recorderRef.current.start();
-
     const pos = {x: getElementCenter(divRef.current).x, y: getElementCenter(divRef.current).y}
     const creationEvent = instanceManager.creationEvents.RECORDER;
     Object.assign(creationEvent, e);
     instanceKeyRef.current = instanceManager.add({ pos, creationEvent });
     document.addEventListener("pointerup", onPointerUp, {once: true})
+    await sleep(settings.micDelay);
+    recorderRef.current.start();
   }
 
   const stopRecording = () => {
@@ -72,6 +75,7 @@ const Recorder = ({ instanceManager }) => {
 
   const saveRecording = async () => {
     setState(states.SAVING);
+    await sleep(settings.micDelay)
     const recording = await recorderRef.current.stop();
     const instanceKey = instanceKeyRef.current;
     const newSoundName = await addSoundToLibrary(recording, "recording");
