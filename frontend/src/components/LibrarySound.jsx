@@ -16,7 +16,7 @@ const LibrarySound = ({ soundName, addSoundInstance }) => {
   
   const handlePointerDown = (e) => {
     const pos = {x: getElementCenter(divRef.current).x, y: getElementCenter(divRef.current).y}
-    addSoundInstance({soundName, pos, creationEvent: e});
+    addSoundInstance({soundName, pos}, e);
   }
   
   return (

@@ -4,15 +4,16 @@ import AnimatedSoundInstance from "./SoundInstance";
 import Water from "./Water";
 import { isSelectorInPoint } from "@utils/dom";
 
-const Pot = ({ soundInstancesData, removeSoundInstance, mergeIfPossible }) => {  
+const Pot = ({ instanceManager }) => {
+  const { instances: soundInstancesData } = instanceManager;
 
   useEffect(() => {
     const controller = new AbortController();
     document.addEventListener("dragend", e => {
       const { clientX: x, clientY: y, target} = e;
       const instanceId = +target.dataset.instanceId;
-      if (!isSelectorInPoint("#pot", {x, y})) removeSoundInstance(instanceId);
-      else mergeIfPossible(instanceId);
+      if (!isSelectorInPoint("#pot", {x, y})) instanceManager.remove(instanceId);
+      else instanceManager.mergeIfPossible(instanceId);
     }, {signal: controller.signal})
     return () => controller.abort();
   }, [soundInstancesData])

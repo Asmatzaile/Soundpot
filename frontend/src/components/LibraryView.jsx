@@ -2,8 +2,14 @@ import { useContext } from "react";
 import LibrarySound from "./LibrarySound";
 import LibraryContext from "@context/LibraryContext";
 
-const LibraryView = ({ addSoundInstance }) => {
+const LibraryView = ({ instanceManager }) => {
   const { library } = useContext(LibraryContext);
+
+  const addSoundInstance = (data, e) => {
+    const creationEvent = instanceManager.creationEvents.LIBRARY;
+    Object.assign(creationEvent, e);
+    instanceManager.add({...data, creationEvent });
+  }
   const LibrarySounds = [...library.entries()].map(([soundName, _]) => <LibrarySound key={soundName} soundName={soundName} addSoundInstance={addSoundInstance} />);
   
   return (

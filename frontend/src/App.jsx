@@ -28,8 +28,8 @@ function App() {
   return (
     <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
     <LibraryContext.Provider value={{ library: library.data, addSoundToLibrary: library.add, removeSound, DISPLAYBUFFER_SIZE: library.DISPLAYBUFFER_SIZE }}>
-      <Pot soundInstancesData={instanceManager.instances} removeSoundInstance={instanceManager.remove} mergeIfPossible={instanceManager.mergeIfPossible} />
-      <Sidebar addSoundInstance={instanceManager.add} />
+      <Pot instanceManager={instanceManager} />
+      <Sidebar instanceManager={instanceManager} />
     </LibraryContext.Provider>
     </main>
   )

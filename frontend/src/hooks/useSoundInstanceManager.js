@@ -1,6 +1,11 @@
 import { useRef, useState } from "react";
 import { doCirclesCollide } from "@utils/math";
 
+const creationEvents = {
+    get LIBRARY() { return { origin: "library" } },
+    get MERGE() { return { origin: "merge" } },
+}
+
 const makeInstance = (key, soundName, pos, creationEvent, getHigherZ, update, getInstances) => ({
     id: key,
     soundName,
@@ -45,7 +50,7 @@ export function useSoundInstanceManager(mergeSounds) {
     
     const get = (key) => key ? instances.get(key) : instances;
 
-    const add = ({ soundName = undefined, pos, creationEvent = undefined }) => {
+    const add = ({ soundName, pos, creationEvent }) => {
         const key = newId();
         const updateObject = updatedObject => update(key, updatedObject);
         const instance = makeInstance(key, soundName, pos, creationEvent, getHigherZ, updateObject, get);
@@ -86,7 +91,7 @@ export function useSoundInstanceManager(mergeSounds) {
         remove(key1);
         remove(key2);
         const pos = { x: (pos1.x + pos2.x) / 2, y: (pos1.y + pos2.y) / 2 };
-        const newInstanceKey = add({ pos });
+        const newInstanceKey = add({ pos, creationEvent: creationEvents.MERGE });
 
         const newSoundName = await mergeSounds(soundName1, soundName2);
         if (newSoundName === undefined) return remove(newInstanceKey); // if there was an error, abort
@@ -103,5 +108,5 @@ export function useSoundInstanceManager(mergeSounds) {
         if (collidingKey !== undefined) mergeInstances(key, collidingKey)
     }
 
-    return { instances, update, add, remove, removeAllWithSound, mergeIfPossible }
+    return { instances, update, add, remove, removeAllWithSound, mergeIfPossible, creationEvents }
 }
