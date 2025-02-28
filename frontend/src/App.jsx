@@ -27,7 +27,7 @@ function App() {
 
   return (
     <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(200px,_1fr)] touch-none">
-    <LibraryContext.Provider value={{ library: library.data, addSoundToLibrary: library.add, removeSound, DISPLAYBUFFER_SIZE: library.DISPLAYBUFFER_SIZE }}>
+    <LibraryContext.Provider value={{ library: library.data, addSoundToLibrary: library.upload, removeSound, DISPLAYBUFFER_SIZE: library.DISPLAYBUFFER_SIZE }}>
       <Pot instanceManager={instanceManager} />
       <Sidebar instanceManager={instanceManager} />
     </LibraryContext.Provider>

@@ -46,6 +46,11 @@ export default function useLibrary() {
     return soundName;
   }
 
+  const upload = async (sound, origin) => {
+    const newSoundMetadata = await api.uploadSound(sound, origin);
+    return add(newSoundMetadata);
+  }
+
   const remove = (soundName) => {
     api.removeSound(soundName);
     setLibrary(prev => {
@@ -73,5 +78,5 @@ export default function useLibrary() {
     return buffer;
   }
 
-  return { data: library, add, remove, merge, DISPLAYBUFFER_SIZE }
+  return { data: library, upload, remove, merge, DISPLAYBUFFER_SIZE }
 }

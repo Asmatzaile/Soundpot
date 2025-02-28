@@ -1,6 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import * as Tone from "tone";
-import { uploadSound } from "../api";
 import LibraryContext from "@context/LibraryContext";
 import useMic from "@hooks/useMic";
 import { getElementCenter } from "@utils/dom";
@@ -78,10 +77,9 @@ const Recorder = ({ instanceManager }) => {
     const recording = await recorderRef.current.stop();
     const instanceKey = instanceKeyRef.current;
     stopRecording();
-    const newSoundMetadata = await uploadSound(recording, "recording");
-    addSoundToLibrary(newSoundMetadata);
+    const newSoundName = await addSoundToLibrary(recording, "recording");
     const instance = instanceManager.instances.get(instanceKey);
-    instance.soundName = newSoundMetadata[0];
+    instance.soundName = newSoundName;
     instanceManager.update(instanceKey, instance);
   }
 
