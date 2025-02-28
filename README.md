@@ -89,3 +89,5 @@ As such, all files are licensed under the GPLv3, except for the following files,
 - [backend/vae_config.json](backend/vae_config.json). From [stable-audio-tools](https://github.com/Stability-AI/stable-audio-tools). Copyright (c) 2023 Stability AI.
 
 The changed code for those files is nevertheless licensed under the GPLv3.
+
+Additionally, this project uses [Lucide Icons](https://lucide.dev/), which are licensed under the [ISC License](https://github.com/lucide-icons/lucide/blob/main/LICENSE).
