@@ -5,6 +5,7 @@ import useMic from "@hooks/useMic";
 import { useSettings } from "@context/SettingsContext";
 import { getElementCenter, isSelectorInPoint } from "@utils/dom";
 import { sleep } from "@utils/misc";
+import { MicIcon, MicOffIcon, LoaderCircleIcon } from "lucide-react";
 
 const Recorder = ({ instanceManager }) => {
   const { settings } = useSettings();
@@ -103,8 +104,25 @@ const Recorder = ({ instanceManager }) => {
       else saveRecording();
     }
   }
+
+  const shapeColorClasses = state === states.ARMED ? "rounded-full text-stone-50 border-4"
+  : `rounded-3xl text-stone-800 ${isBusy() ? "bg-stone-50" : state === states.BLOCKED ? "bg-stone-600" : "bg-stone-400"}`
+  const cursorClass = state === states.ARMED ? "cursor-grab" : state === states.PROMPT ? "cursor-pointer" : "cursor-default";
   
+  const iconComponent = (()=> {
+    switch (state) {
+      case states.BLOCKED:
+        return <MicOffIcon />
+      case states.LOADING:
+      case states.SAVING:
+        return <LoaderCircleIcon style={{animation: "rotation 1s linear infinite"}}/>
+      default:
+        return <MicIcon />
+  }
+  })();
   return <div ref={divRef} onPointerDown={onPointerDown} onPointerUp={onPointerUp}
-  className={`${state === states.RECORDING? "bg-red-500" : "bg-stone-700"} h-16 touch-none cursor-pointer`}>{state}</div>
+  className={`${shapeColorClasses} ${cursorClass} size-16 touch-none grid place-content-center`}>
+    { iconComponent }
+  </div>
 }
 export default Recorder;

@@ -5,7 +5,7 @@ import LibraryContext from "@context/LibraryContext";
 const SoundWaveform = ({ className="", soundName, loaded }) => {
   const color = useRef(getSoundColor(soundName));
   useEffect(() => {
-    color.current = getSoundColor(soundName) ?? 'text-white';
+    color.current = getSoundColor(soundName) ?? 'text-stone-50';
   }, [soundName]);
   
   const { library, DISPLAYBUFFER_SIZE } = useContext(LibraryContext);

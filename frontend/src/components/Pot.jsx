@@ -35,7 +35,7 @@ const Pot = ({ instanceManager, openSettings }) => {
       {transitions((style, [key, instanceData]) => <AnimatedSoundInstance style={{...style}} key={key}
         object={instanceData} isDisposed={!soundInstancesData.has(key)} />
       )}
-      <div className="pointer-events-none absolute grid grid-cols-2 grid-rows-2 h-full w-full p-2 inset-0">
+      <div className="pointer-events-none absolute grid grid-cols-2 grid-rows-2 h-full w-full p-4 inset-0">
         <div className="grid grid-flow-col col-start-2 row-start-2 place-self-end">
           <button className="pointer-events-auto" onClick={openSettings}>
             <Settings className="text-stone-600"/>
