@@ -100,7 +100,7 @@ const Recorder = ({ instanceManager }) => {
     if (state === states.PROMPT) openMic();
     if (state === states.RECORDING) {
       const { clientX: x, clientY: y} = e;
-      if (isSelectorInPoint("#thrash", {x, y})) cancelRecording();
+      if (isSelectorInPoint("#trash", {x, y})) cancelRecording();
       else saveRecording();
     }
   }
