@@ -5,7 +5,7 @@ import Trash from "./Trash";
 const Sidebar = ({ instanceManager }) => {
   return <div className="bg-stone-800 flex flex-col max-h-dvh">
     <LibraryView instanceManager={ instanceManager } />
-    <div className="grid grid-cols-2 p-4">
+    <div className="p-1 grid grid-cols-2 place-items-center">
       <Recorder instanceManager={ instanceManager }/>
       <Trash />
     </div>
