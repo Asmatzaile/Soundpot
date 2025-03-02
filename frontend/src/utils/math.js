@@ -38,3 +38,5 @@ const euclidAbsolute = (pulses, steps) => {
 
     return bjorklundArray.map((value, index)=>value == 1 ? value*index : undefined).filter(item=>item!==undefined);
 }
+
+export const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
