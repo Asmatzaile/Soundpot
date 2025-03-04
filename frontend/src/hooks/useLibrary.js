@@ -46,8 +46,8 @@ export default function useLibrary() {
     return soundName;
   }
 
-  const upload = async (sound, origin) => {
-    const newSoundMetadata = await api.uploadSound(sound, origin);
+  const upload = async (sound, metadata) => {
+    const newSoundMetadata = await api.uploadSound(sound, metadata);
     return add(newSoundMetadata);
   }
 

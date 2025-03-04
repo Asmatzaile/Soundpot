@@ -22,10 +22,11 @@ export const getMergedSoundsMetadata = async (filename1, filename2) => {
     return undefined;
 }
 
-export const uploadSound = async (sound, origin) => {
+export const uploadSound = async (sound, metadata) => {
     const soundData = new FormData();
     soundData.append("sound", sound);
-    const response = await fetch(`/api/library/?origin=${origin}`, {
+    soundData.append("metadata", JSON.stringify(metadata))
+    const response = await fetch("/api/library/", {
         method: "POST",
         body: soundData,
     })

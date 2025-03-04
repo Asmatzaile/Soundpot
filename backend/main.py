@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 
 from pydub import AudioSegment
 
-from fastapi import FastAPI, File, Form, HTTPException, Query
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
@@ -46,11 +46,12 @@ async def serve_file(filename: str):
     return FileResponse(path)
 
 @app.post("/library/")
-async def upload_sound(sound = File(...), origin = Query(None)):
+async def upload_sound(sound: UploadFile = File(...), metadata: str = Form(...)):
     try:
-        out_path = libctrl.reserve_file(origin)
-    except:
-        raise HTTPException(status_code=422, detail=f"Unknown origin: {origin}")
+        metadata = json.loads(metadata)
+        out_path = libctrl.reserve_file(metadata)
+    except Exception:
+        raise HTTPException(status_code=422, detail=str(Exception))
     content = await sound.read()
     buffer = io.BytesIO(content)
     audio = AudioSegment.from_file(buffer)

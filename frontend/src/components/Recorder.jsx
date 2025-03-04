@@ -79,7 +79,7 @@ const Recorder = ({ instanceManager }) => {
     await sleep(settings.micDelay)
     const recording = await recorderRef.current.stop();
     const instanceKey = instanceKeyRef.current;
-    const newSoundName = await addSoundToLibrary(recording, "recording");
+    const newSoundName = await addSoundToLibrary(recording, { origin: "recording" });
     const instance = instanceManager.instances.get(instanceKey);
     if (instance) { // if it was left inside the pot
       instance.soundName = newSoundName;

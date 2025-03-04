@@ -68,12 +68,12 @@ def reserve_merge(parentname1, parentname2):
     return [get_path(parentname1), get_path(parentname2), get_path(filename)]
 
 # must be confirmed with confirm_file
-def reserve_file(origin):
+def reserve_file(metadata):
+    origin = metadata['origin']
     if origin not in Origin._value2member_map_:
-        raise TypeError
+        raise TypeError(f"Unknown origin: {origin}")
     filename = get_new_filename()
-    soundMetadata = {'origin': origin}
-    LIBRARY_METADATA[filename] = soundMetadata
+    LIBRARY_METADATA[filename] = metadata
     save()
     return get_path(filename)
 
