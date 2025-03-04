@@ -60,6 +60,18 @@ Lastly, run the following command, replacing `<HF_TOKEN>` with your token:
 npm run get_vae -- --token=<HF_TOKEN>
 ```
 
+#### Step 3: Add the Freesound token
+
+Go to [Freesound](https://freesound.org/) and log in, or sign up if you don't have an account.
+
+Then, [generate a Freesound API credential](https://freesound.org/apiv2/apply) for `Soundpot`.
+
+Last, navigate to the `frontend` directory of this repository and create a file named `.env.local`. There, put your api key under the name `VITE_FREESOUND_KEY`.
+
+```shell
+VITE_FREESOUND_KEY=YOUR_API_KEY
+```
+
 ### Adding sounds
 
 To add 'primordial sounds' to the application, put them inside the `backend/library` folder.

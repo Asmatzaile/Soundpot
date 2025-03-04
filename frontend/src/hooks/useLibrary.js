@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { resampleArray } from "@utils/math";
-import * as api from "../api";
+import * as api from "@api/libraryApi";
 import { ToneAudioBuffer } from "tone";
 
 

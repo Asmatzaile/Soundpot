@@ -40,3 +40,5 @@ const euclidAbsolute = (pulses, steps) => {
 }
 
 export const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
+
+export const randInt = (max, min=0) => Math.floor(Math.random() * (max - min)) + min;

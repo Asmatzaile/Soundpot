@@ -12,6 +12,7 @@ METADATA_PATH = LIBRARY_PATH / ".metadata.json"
 class Origin(str, Enum):
     MERGE = "merge"
     RECORDING = "recording"
+    FREESOUND = "freesound"
 
 def load(extra_logging=None, save_after_load=True):
     global LIBRARY_METADATA
@@ -49,8 +50,8 @@ def save():
     with open(METADATA_PATH, "w", encoding="utf-8") as f:
         json.dump(LIBRARY_METADATA, f, ensure_ascii=False, indent=4)
 
-def get_new_filename():
-    candidate_filename_base = f"sound{len(LIBRARY_METADATA)}"
+def get_new_filename(proposal=None):
+    candidate_filename_base = Path(proposal).stem if proposal else f"sound{len(LIBRARY_METADATA)}"
     candidate_filename = f"{candidate_filename_base}.wav"
     if candidate_filename not in LIBRARY_METADATA: return candidate_filename
     retries = 1
@@ -72,7 +73,9 @@ def reserve_file(metadata):
     origin = metadata['origin']
     if origin not in Origin._value2member_map_:
         raise TypeError(f"Unknown origin: {origin}")
-    filename = get_new_filename()
+    original_name = metadata.pop('name', None)
+    if original_name: metadata['original_name'] = original_name
+    filename = get_new_filename(original_name)
     LIBRARY_METADATA[filename] = metadata
     save()
     return get_path(filename)
