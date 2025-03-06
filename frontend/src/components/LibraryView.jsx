@@ -13,7 +13,7 @@ const LibraryView = ({ instanceManager }) => {
   const LibrarySounds = [...library.entries()].map(([soundName, _]) => <LibrarySound key={soundName} soundName={soundName} addSoundInstance={addSoundInstance} />);
   
   return (
-    <div id="library" className="p-4 grid grid-cols-[repeat(auto-fill,_minmax(64px,_1fr))] content-start place-items-center gap-4 overflow-auto flex-auto">
+    <div id="library" className="p-4 grid grid-cols-[repeat(auto-fill,minmax(64px,1fr))] content-start place-items-center gap-4 overflow-auto flex-auto">
       {LibrarySounds}
     </div>
   )
