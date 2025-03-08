@@ -8,7 +8,7 @@ const Sidebar = ({ instanceManager }) => {
     <LibraryView instanceManager={ instanceManager } />
     <div className="p-1 grid grid-cols-3 place-items-center">
       <Recorder instanceManager={ instanceManager }/>
-      <FreesoundDownloader />
+      <FreesoundDownloader instanceManager={ instanceManager } />
       <Trash />
     </div>
   </div>

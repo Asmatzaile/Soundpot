@@ -38,12 +38,16 @@ const getSoundInstanceWithNumber = async (url, number) => {
 }
 
 let soundCount;
-export const getRandomSound = async () => {
+export const getRandomSound = async (signal) => {
     const filter = 'duration:[1 TO 10] license:("Creative Commons 0" OR "Attribution")'
     const url = addParamsToUrl(endpoint, {token, filter});
     soundCount = soundCount ?? await getSoundCount(url);
     const soundMetadata = await getSoundInstanceWithNumber(url, randInt(soundCount));
-    const sound = await (await fetch(soundMetadata.url)).blob()
-    delete soundMetadata.url;
-    return [sound, soundMetadata]
+    return fetch(soundMetadata.url, { signal })
+    .then(response => response.blob())
+    .then(sound => {
+        delete soundMetadata.url;
+        return [sound, soundMetadata]
+    })
+    .catch(_e => []);
 }

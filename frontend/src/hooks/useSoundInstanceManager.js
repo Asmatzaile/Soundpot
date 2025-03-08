@@ -5,6 +5,7 @@ const creationEvents = {
     get LIBRARY() { return { origin: "library" } },
     get MERGE() { return { origin: "merge" } },
     get RECORDER() { return { origin: "recorder" } },
+    get FREESOUND() { return { origin: "freesound" } },
 }
 
 const makeInstance = (key, soundName, pos, creationEvent, getHigherZ, update, getInstances) => ({
