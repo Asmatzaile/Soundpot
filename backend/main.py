@@ -50,8 +50,8 @@ async def upload_sound(sound: UploadFile = File(...), metadata: str = Form(...))
     try:
         metadata = json.loads(metadata)
         out_path = libctrl.reserve_file(metadata)
-    except Exception:
-        raise HTTPException(status_code=422, detail=str(Exception))
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
     content = await sound.read()
     buffer = io.BytesIO(content)
     audio = AudioSegment.from_file(buffer)
@@ -69,8 +69,13 @@ async def merge_sounds(filename1 : str = Form(...), filename2 : str = Form(...))
     filename2 = decodeuri(filename2)
     [in_path1, in_path2, out_path] = libctrl.reserve_merge(filename1, filename2)
     logging.info(f"Merging sounds {filename1} and {filename2} into {out_path.name}")
-    await model.interpolate_sounds(in_path1, in_path2, out_path)
-    return confirm_file(out_path.name)
+    try:
+        await model.interpolate_sounds(in_path1, in_path2, out_path)
+        return confirm_file(out_path.name)
+    except Exception as e:
+        logging.info(f"An error occurred merging sounds {filename1} and {filename2}: {str(e)}")
+        libctrl.reject_file(out_path.name)
+
 
 def confirm_file(filename):
     metadata = libctrl.confirm_file(filename)

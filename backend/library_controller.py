@@ -85,6 +85,10 @@ def confirm_file(filename):
     save()
     return LIBRARY_METADATA[filename]
 
+# To use if a file reserved with reserve_file went wrong
+def reject_file(filename):
+    delete_sound(filename)
+
 def delete_sound(filename):
     get_path(filename).unlink(missing_ok=True)
     LIBRARY_METADATA.pop(filename)
