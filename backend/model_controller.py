@@ -35,9 +35,15 @@ async def load_audio(path) -> torch.Tensor:
         tensor, sr = torchaudio.load(path)
     except RuntimeError:
         raise Exception(f"File {path} not found")
+
     if sr != SAMPLE_RATE:
         resampler = torchaudio.transforms.Resample(sr, SAMPLE_RATE)
         tensor = resampler(tensor)
+
+    # Convert mono to stereo if necessary
+    if tensor.shape[0] == 1:
+        tensor = tensor.repeat(2, 1)
+
     return tensor.to(DEVICE)
 
 async def interpolate_sounds(path1, path2, output_path):
