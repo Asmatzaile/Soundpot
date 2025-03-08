@@ -6,10 +6,12 @@ import { useSettings } from "@context/SettingsContext";
 import { getElementCenter, isSelectorInPoint } from "@utils/dom";
 import { sleep } from "@utils/misc";
 import { MicIcon, MicOffIcon, LoaderCircleIcon } from "lucide-react";
+import useDummyInstanceManager from "@hooks/useDummyInstanceManager";
 
 const Recorder = ({ instanceManager }) => {
   const { settings } = useSettings();
   const { addSoundToLibrary } = useContext(LibraryContext);
+  const dummyInstance = useDummyInstanceManager(instanceManager);
 
   const { state: micState, states: micStates, openMic, mic } = useMic();
 
@@ -49,14 +51,11 @@ const Recorder = ({ instanceManager }) => {
 
   const divRef = useRef(null);
   
-  const instanceKeyRef = useRef();
+
   const startRecording = async (e) => {
     setState(states.RECORDING)
-    const pos = {x: getElementCenter(divRef.current).x, y: getElementCenter(divRef.current).y}
-    const creationEvent = instanceManager.creationEvents.RECORDER;
-    Object.assign(creationEvent, e);
-    instanceKeyRef.current = instanceManager.add({ pos, creationEvent });
-    document.addEventListener("pointerup", onPointerUp, {once: true})
+    dummyInstance.create(e, {x: getElementCenter(divRef.current).x, y: getElementCenter(divRef.current).y}, instanceManager.creationEvents.RECORDER);
+    document.addEventListener("pointerup", onPointerUp, {once: true}) // because we created the instance. could lead to bugs.
     await sleep(settings.micDelay);
     recorderRef.current.start();
   }
@@ -64,27 +63,20 @@ const Recorder = ({ instanceManager }) => {
   const stopRecording = () => {
     if (statesRef.current.state === states.RECORDING) recorderRef.current.stop();
     setState(micStateToRecorderState(statesRef.current.micState));
-    instanceKeyRef.current = undefined;
+    dummyInstance.forget();
   }
 
   const cancelRecording = () => {
-    const instanceKey = instanceKeyRef.current;
+    dummyInstance.remove();
     stopRecording();
-    if (instanceKey === undefined) return;
-    instanceManager.remove(instanceKey)
   }
 
   const saveRecording = async () => {
     setState(states.SAVING);
     await sleep(settings.micDelay)
     const recording = await recorderRef.current.stop();
-    const instanceKey = instanceKeyRef.current;
     const newSoundName = await addSoundToLibrary(recording, { origin: "recording" });
-    const instance = instanceManager.instances.get(instanceKey);
-    if (instance) { // if it was left inside the pot
-      instance.soundName = newSoundName;
-      instanceManager.update(instanceKey, instance);
-    }
+    dummyInstance.updateSoundName(newSoundName);
     stopRecording();
   }
 
