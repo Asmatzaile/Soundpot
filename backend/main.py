@@ -4,6 +4,7 @@ from urllib.parse import unquote as decodeuri # because starlette doesn't decode
 import logging
 import uvicorn
 from contextlib import asynccontextmanager
+import traceback
 
 from pydub import AudioSegment
 
@@ -73,7 +74,8 @@ async def merge_sounds(filename1 : str = Form(...), filename2 : str = Form(...))
         await model.interpolate_sounds(in_path1, in_path2, out_path)
         return confirm_file(out_path.name)
     except Exception as e:
-        logging.info(f"An error occurred merging sounds {filename1} and {filename2}: {str(e)}")
+        logging.info(f"An error occurred merging sounds {filename1} and {filename2}:")
+        traceback.print_exc()
         libctrl.reject_file(out_path.name)
 
 

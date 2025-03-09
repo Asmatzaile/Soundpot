@@ -32,6 +32,7 @@ While in the pot:
 - [Node.js](https://nodejs.org/en)
 - [conda](https://anaconda.org/anaconda/conda)
 - [FFmpeg](https://www.ffmpeg.org)
+- [sox](https://sourceforge.net/projects/sox/)
 
 #### Step 1: Install dependencies
 
@@ -70,6 +71,20 @@ Last, navigate to the `frontend` directory of this repository and create a file 
 
 ```shell
 VITE_FREESOUND_KEY=YOUR_API_KEY
+```
+
+### Troubleshooting
+
+#### Libsox
+
+```sh
+OSError: libsox.so: cannot open shared object file: No such file or directory
+```
+
+Solution:
+
+```sh
+sudo apt install libsox-dev
 ```
 
 ### Adding sounds

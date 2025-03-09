@@ -24,3 +24,8 @@ def rotate(vec, factor):
 def nonlinear(vec, factor):
     return torch.tanh(vec * (1 + factor))
 
+def clip_lengths_to_min(tensor1, tensor2):
+    min_length = min(tensor1.shape[1], tensor2.shape[1])
+    tensor1 = tensor1[:, :min_length]
+    tensor2 = tensor2[:, :min_length]
+    return [tensor1, tensor2]

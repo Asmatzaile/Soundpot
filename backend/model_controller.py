@@ -1,8 +1,10 @@
 from pathlib import Path
 import json
+import random
 
 import torch
 import torchaudio
+from torchaudio.sox_effects import apply_effects_tensor
 from stable_audio_tools.models.factory import create_model_from_config
 from stable_audio_tools.models.utils import load_ckpt_state_dict
 from stable_audio_tools.training.utils import copy_state_dict
@@ -44,16 +46,31 @@ async def load_audio(path) -> torch.Tensor:
     if tensor.shape[0] == 1:
         tensor = tensor.repeat(2, 1)
 
-    return tensor.to(DEVICE)
+    return tensor
+
+
+def timestretch_to_length(tensor, length):
+    factor = tensor.shape[1] / length
+    sox_effects = [
+        ['rate', str(SAMPLE_RATE)],
+        ['tempo', str(factor)]
+    ]
+    tensor, _sr = apply_effects_tensor(tensor, SAMPLE_RATE, sox_effects)
+    return tensor
 
 async def interpolate_sounds(path1, path2, output_path):
     tensor1 = await load_audio(path1)
     tensor2 = await load_audio(path2)
 
     # Ensure both audio files are the same length
-    min_length = min(tensor1.shape[1], tensor2.shape[1])
-    tensor1 = tensor1[:, :min_length]
-    tensor2 = tensor2[:, :min_length]
+    length = random.randint(*sorted([tensor1.shape[1], tensor2.shape[1]]))
+    tensor1 = timestretch_to_length(tensor1, length)
+    tensor2 = timestretch_to_length(tensor2, length)
+    [tensor1, tensor2] = tensor_transforms.clip_lengths_to_min(tensor1, tensor2)
+
+    # Move audio files to the device if cuda is available, for faster operations with model
+    tensor1 = tensor1.to(DEVICE)
+    tensor2 = tensor2.to(DEVICE)
 
     # Interpolate in latent space
     model = load()
