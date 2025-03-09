@@ -22,6 +22,10 @@ export const resampleArray = (array, newLength) => {
     return slices;
 }
 
+export const subgroupArray = (array, groupLen=1) => {
+    return array.reduce((acc, cur, i) =>  i % groupLen === 0 ? [...acc, [cur]] : [...acc.slice(0, -1), [...acc[acc.length - 1], cur]], [])
+}
+
 const euclidAbsolute = (pulses, steps) => {
     if (pulses > steps) throw new Error(`More pulses (${pulses}) than steps (${steps})!`);
 

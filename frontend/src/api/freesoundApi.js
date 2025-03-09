@@ -1,8 +1,16 @@
-import { randInt } from "@utils/math";
-import { addParamsToUrl } from "@utils/url";
+import { randInt, subgroupArray } from "@utils/math";
+import { addParamsToUrl, getParamsFromUrl } from "@utils/url";
 
 let token;
 const endpoint = "https://freesound.org/apiv2/search/text";
+
+const addFiltersToUrl = (url, newFilters) => {
+    const existingFiltersString = getParamsFromUrl(url).filter;
+    const existingFiltersObj = existingFiltersString ? Object.fromEntries(subgroupArray(existingFiltersString.split(/\s?(\w+):/).slice(1), 2)) : {};
+    const filtersObj = {...existingFiltersObj, ...newFilters};
+    const filtersString = Object.entries(filtersObj).map(entry => entry.join(":")).join(" ");
+    return addParamsToUrl(url, {filter: filtersString});
+}
 
 export const authenticate = async (candidateKey) => {
     const url = addParamsToUrl(endpoint, {token: candidateKey})
@@ -39,8 +47,9 @@ const getSoundInstanceWithNumber = async (url, number) => {
 
 let soundCount;
 export const getRandomSound = async (signal) => {
-    const filter = 'duration:[1 TO 10] license:("Creative Commons 0" OR "Attribution")'
-    const url = addParamsToUrl(endpoint, {token, filter});
+    let url = addParamsToUrl(endpoint, { token });
+    const filters = {duration: "[1 TO 10]", license: '("Creative Commons 0" OR "Attribution")'};
+    url = addFiltersToUrl(url, filters);
     soundCount = soundCount ?? await getSoundCount(url);
     const soundMetadata = await getSoundInstanceWithNumber(url, randInt(soundCount));
     return fetch(soundMetadata.url, { signal })
