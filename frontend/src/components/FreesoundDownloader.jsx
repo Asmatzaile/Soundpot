@@ -5,6 +5,7 @@ import { DownloadRandomIcon } from "./DownloadRandomIcon"
 import LibraryContext from "@context/LibraryContext";
 import useDummyInstanceManager from "@hooks/useDummyInstanceManager";
 import { getElementCenter, isSelectorInPoint } from "@utils/dom";
+import { useSettings } from "@context/SettingsContext";
 
 const cooldownTime = 10000;
 const states = {
@@ -16,6 +17,7 @@ const states = {
 }
 
 export default function FreesoundDownloader({ instanceManager }) {
+    const { settings } = useSettings();
     const { addSoundToLibrary } = useContext(LibraryContext);
     const dummyInstance = useDummyInstanceManager(instanceManager);
     const abortControllerRef = useRef();
@@ -66,7 +68,7 @@ export default function FreesoundDownloader({ instanceManager }) {
         const controller = new AbortController();
         abortControllerRef.current = controller;
         document.addEventListener("pointerup", onPointerUp, {once: true}) // because we created the instance. TODO: as with recorder, could lead to bugs with multitouch
-        const [sound, metadata] = await api.getRandomSound(controller.signal);
+        const [sound, metadata] = await api.getRandomSound({ allowExplicit: settings.allowExplicit, signal: controller.signal });
         if (sound === undefined) return dummyInstance.remove();
         const newSoundName = await addSoundToLibrary(sound, { ...metadata, origin: 'freesound' });
         dummyInstance.updateSoundName(newSoundName);

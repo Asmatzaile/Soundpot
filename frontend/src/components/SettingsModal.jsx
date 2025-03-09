@@ -24,20 +24,28 @@ export function SettingsModal({close}) {
     return <div className="absolute isolate grid w-full h-full" style={{ background: "#0009", zIndex }}> 
         <dialog className="grid gap-4 place-self-center p-4 rounded-lg bg-stone-700 text-stone-50 min-w-72">
         SETTINGS
-        <div className="ml-4">
-            <label className="flex justify-between">
+        <div className="ml-4 grid grid-cols-[auto_auto_auto] gap-y-2">
+            <label className="col-span-full grid grid-cols-subgrid">
                 Mic delay
-                <div>
+                <div className="grid col-span-2 grid-cols-subgrid grid-flow-col gap-1">
                     <input
                     size="5"
                     value={localSettings.micDelay}
                     onChange={(e) =>
-                        setLocalSettings({ ...localSettings, micDelay: clamp(sanitize(e.target.value), 0, 1000) })
+                        setLocalSettings(settings => ({ ...settings, micDelay: clamp(sanitize(e.target.value), 0, 1000) }))
                     }
-                    className="ml-2 mr-1 bg-stone-800 rounded-md text-right px-2 no-arrows"
+                    className="ml-2 bg-stone-800 rounded-md text-right px-2 no-arrows"
                     />
-                ms
+                    <span>ms</span>
                 </div>
+            </label>
+            <label className="col-span-full grid grid-cols-subgrid">
+                Allow explicit sounds
+                <input type="checkbox"
+                className="justify-self-end"
+                checked={localSettings.allowExplicit}
+                onChange={e => setLocalSettings(settings => ({...settings, allowExplicit: e.target.checked}))}
+                />
             </label>
         </div>
         <div className="grid grid-cols-2 gap-1 justify-self-end">

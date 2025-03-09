@@ -4,6 +4,7 @@ const SettingsContext = createContext();
 
 const defaultSettings = {
   micDelay: 0,
+  allowExplicit: false,
 }
 const browserSettings = JSON.parse(localStorage.getItem("settings"));
 

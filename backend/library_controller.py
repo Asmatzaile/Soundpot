@@ -64,6 +64,8 @@ def get_new_filename(proposal=None):
 def reserve_merge(parentname1, parentname2):
     filename = get_new_filename()
     soundMetadata = {'origin': Origin.MERGE, 'parents': [parentname1, parentname2]}
+    is_explicit = LIBRARY_METADATA[parentname1].get("is_explicit", False) or LIBRARY_METADATA[parentname2].get("is_explicit", False)
+    if is_explicit : soundMetadata["is_explicit"] = True
     LIBRARY_METADATA[filename] = soundMetadata
     save()
     return [get_path(parentname1), get_path(parentname2), get_path(filename)]

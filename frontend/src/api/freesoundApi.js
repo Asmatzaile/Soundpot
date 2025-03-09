@@ -34,21 +34,24 @@ const cleanResult = result => {
     delete result.created;
     result.url = result.previews["preview-hq-ogg"];
     delete result.previews;
+    if (!result.is_explicit) delete result.is_explicit
     return result;
 }
 
 // In the freesound api, instance is the data about the sound. different from SoundInstance in Soundpot.
 const getSoundInstanceWithNumber = async (url, number) => {
-    url = addParamsToUrl(url, {page_size:1, page:number, fields:"id,name,username,previews,created"})
+    url = addParamsToUrl(url, {page_size:1, page:number, fields:"id,name,username,previews,created,is_explicit"})
     const response = await fetch(url);
     const result = (await response.json()).results[0];
     return cleanResult(result);
 }
 
 let soundCount;
-export const getRandomSound = async (signal) => {
+export const getRandomSound = async options => {
+    const { allowExplicit, signal } = options;
     let url = addParamsToUrl(endpoint, { token });
     const filters = {duration: "[1 TO 10]", license: '("Creative Commons 0" OR "Attribution")'};
+    if (!allowExplicit) filters.is_explicit = false
     url = addFiltersToUrl(url, filters);
     soundCount = soundCount ?? await getSoundCount(url);
     const soundMetadata = await getSoundInstanceWithNumber(url, randInt(soundCount));

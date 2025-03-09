@@ -1,12 +1,30 @@
-import { useEffect } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { useTransition } from "@react-spring/web";
 import AnimatedSoundInstance from "./SoundInstance";
 import Water from "./Water";
 import { isSelectorInPoint } from "@utils/dom";
-import { Settings } from "lucide-react";
+import { SettingsIcon } from "lucide-react";
+import { useSettings } from "@context/SettingsContext";
+import LibraryContext from "@context/LibraryContext";
 
 const Pot = ({ instanceManager, openSettings }) => {
-  const { instances: soundInstancesData } = instanceManager;
+  const { settings } = useSettings();
+  const { instances: soundInstancesData, remove: removeInstance } = instanceManager;
+
+  const { library } = useContext(LibraryContext);
+  const onSettingsChange = () => {
+    if (settings.allowExplicit) return;
+    soundInstancesData.forEach(data => {
+      if (!library.get(data.soundName).is_explicit) return;
+      removeInstance(data.id); // TODO: this creates a react warning (cannot update a component while rendering another) https://reactjs.org/link/setstate-in-render
+    })
+  }
+  const settingsRef = useRef(settings);
+  const checkIfSettingsChanged = () => {
+    if (settings !== settingsRef.current) onSettingsChange();
+    settingsRef.current = settings;
+  }
+  checkIfSettingsChanged();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -38,7 +56,7 @@ const Pot = ({ instanceManager, openSettings }) => {
       <div className="pointer-events-none absolute grid grid-cols-2 grid-rows-2 h-full w-full p-4 inset-0">
         <div className="grid grid-flow-col col-start-2 row-start-2 place-self-end">
           <button className="pointer-events-auto" onClick={openSettings}>
-            <Settings className="text-stone-600"/>
+            <SettingsIcon className="text-stone-600"/>
           </button>
         </div>
       </div>
