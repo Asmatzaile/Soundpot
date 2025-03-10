@@ -12,6 +12,7 @@ function App() {
   const library = useLibrary();
   const instanceManager = useSoundInstanceManager(library.merge);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [started, setStarted] = useState(false)
 
   useEffect(()=> {
     const compressor = new Tone.Compressor()
@@ -21,7 +22,17 @@ function App() {
   
 
   const loaded = library.data !== null
-  if (!loaded) return <main className="min-h-dvh grid place-content-center" >Loading...</main>
+  if (!started) return <div className="min-h-dvh grid grid-rows-[1fr_auto] bg-stone-900 text-stone-50">
+    <main className=" grid place-content-center place-items-center gap-16" >
+      <h1 className="text-9xl">Soundpot</h1>
+      <button className={`text-2xl uppercase px-4 border-1 rounded-lg transition-colors enabled:hover:bg-stone-50 enabled:hover:border-stone-50 enabled:hover:text-stone-900 disabled:text-stone-200`} disabled={!loaded} onClick={() => setStarted(true)}>
+        {!loaded ? "Loading..." : "Start"}
+      </button>
+    </main>
+    <footer className="py-4  grid place-items-center text-stone-200">
+      <span>by <a href="https://gorkaegino.com">Gorka Egino</a></span>
+    </footer>
+  </div>
 
   const removeSound = soundName => {
     library.remove(soundName);
