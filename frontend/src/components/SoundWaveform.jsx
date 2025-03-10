@@ -2,7 +2,7 @@ import { useContext, useEffect, useId, useRef, useState } from "react";
 import { getSoundColor } from "@utils/misc";
 import LibraryContext from "@context/LibraryContext";
 
-const SoundWaveform = ({ className="", style={}, soundName, loaded, start, isGlowing }) => {
+const SoundWaveform = ({ className="", style={}, soundName, loaded, start, isGlowing, isGrayscale }) => {
   const divRef = useRef();
   const color = useRef(getSoundColor(soundName));
   useEffect(() => {
@@ -58,7 +58,7 @@ const SoundWaveform = ({ className="", style={}, soundName, loaded, start, isGlo
   }, [highlightedLine]);
 
   const maskId = useId();
-  return <div ref={divRef} style={{ ...style, transition: "color 0.4s, filter 0.2s", filter: `drop-shadow(0 0 ${isGlowing ? 5 : 0}px)` }}
+  return <div ref={divRef} style={{ ...style, transition: "color 0.4s, filter 0.2s, opacity 0.2s", filter: `drop-shadow(0 0 ${isGlowing ? 5 : 0}px) ${isGrayscale ? "grayscale(1)" : ""}`, opacity: `${isGrayscale ? 0.2  : 1}` }}
   className={`${className} ${className.includes('absolute')? '' : 'relative'} ${color.current} border-4 rounded-full
   flex justify-center items-center backdrop-blur-xs`}>
     <svg style={{ scale: "100%", pointerEvents: "none" }} className='stroke-current absolute' viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">

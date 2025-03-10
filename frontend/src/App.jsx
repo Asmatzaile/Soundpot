@@ -42,7 +42,7 @@ function App() {
   return (
     <SettingsProvider>
       <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(270px,1fr)] touch-none overflow-clip">
-        <LibraryContext.Provider value={{ library: library.data, addSoundToLibrary: library.upload, removeSound, DISPLAYBUFFER_SIZE: library.DISPLAYBUFFER_SIZE }}>
+        <LibraryContext.Provider value={{ library: library.data, addSoundToLibrary: library.upload, removeSound, DISPLAYBUFFER_SIZE: library.DISPLAYBUFFER_SIZE, flagSound: library.flag, unflagSound: library.unflag }}>
           <Pot instanceManager={instanceManager} openSettings={() =>setIsSettingsOpen(true)}/>
           <Sidebar instanceManager={instanceManager} />
         </LibraryContext.Provider>

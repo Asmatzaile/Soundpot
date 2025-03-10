@@ -40,7 +40,7 @@ export default function useLibrary() {
     const buffer = loadBuffer(soundName);
     setLibrary(prev => {
       const newMap = new Map(prev);
-      newMap.set(soundName, {...soundInfo, buffer});
+      newMap.set(soundName, {...soundInfo, buffer, flags: new Set()});
       return newMap;
     });
     return soundName;
@@ -79,5 +79,38 @@ export default function useLibrary() {
     return buffer;
   }
 
-  return { data: library, upload, remove, merge, DISPLAYBUFFER_SIZE }
+  const flag = (soundName, flag) => {
+    setLibrary(prev => {
+      if (prev.get(soundName) === undefined) {
+        console.error(`No sound ${soundName} in library`);
+        return prev;
+      }
+      if (prev.get(soundName).flags.has(flag)) return prev;
+      const n = new Map(prev);
+      const prevFlags = prev.get(soundName).flags;
+      const nFlags = new Set(prevFlags);
+      nFlags.add(flag);
+      n.set(soundName, {...prev.get(soundName), flags: nFlags})
+      return n;
+    })
+  }
+
+  const unflag = (soundName, flag) => {
+    setLibrary(prev => {
+      if (prev.get(soundName) === undefined) {
+        console.error(`No sound ${soundName} in library`);
+        return prev;
+      }
+      if (!prev.get(soundName).flags.has(flag)) return prev;
+      const n = new Map(prev);
+      const prevFlags = prev.get(soundName).flags;
+      const nFlags = new Set(prevFlags);
+      nFlags.delete(flag);
+      n.set(soundName, {...prev.get(soundName), flags: nFlags})
+      return n;
+    })
+
+  }
+
+  return { data: library, upload, remove, merge, flag, unflag, DISPLAYBUFFER_SIZE }
 }

@@ -15,6 +15,7 @@ const SoundInstance = ({ object, style, isDisposed, isGlowing }) => {
 
   const [loaded, setLoaded] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [isGrayscale, setIsGrayscale] = useState(false);
 
   const loadPlayer = (buffer) => {
     playerRef.current = new Tone.Player(buffer).toDestination();
@@ -27,6 +28,12 @@ const SoundInstance = ({ object, style, isDisposed, isGlowing }) => {
     object.isDragging = dragging;
     object.update(object);
   }, [loaded, dragging, isDisposed]);
+
+  useEffect(() => {
+    if (soundName === undefined || isDisposed) return;
+    if (!library.get(soundName)) return; // for some reason being disposed doesn't update so well
+    setIsGrayscale(library.get(soundName).flags.has("trash"));
+  }, [library, soundName, isDisposed])
 
   useEffect(() => {
     if (soundName === undefined) return () => undefined;
@@ -94,7 +101,7 @@ const SoundInstance = ({ object, style, isDisposed, isGlowing }) => {
     onDragStart={handleDragStart} onDragEnd={handleDragEnd}
     className={`absolute ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none top-0`}
     style={{ ...style, zIndex, transform: to([x, y, style.transform, transform], (x, y, tf1, tf2) => `translate3d(${x}px, ${y}px, 0) ${tf1} ${tf2}`) }} >
-      <SoundWaveform isGlowing={isGlowing} start={justCollided} soundName={soundName} loaded={loaded} className="size-24 -translate-x-1/2 -translate-y-1/2 absolute"/>
+      <SoundWaveform isGrayscale={isGrayscale} isGlowing={isGlowing} start={justCollided} soundName={soundName} loaded={loaded} className="size-24 -translate-x-1/2 -translate-y-1/2 absolute"/>
     </animated.div>
 }
 const AnimatedSoundInstance = animated(SoundInstance);

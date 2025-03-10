@@ -6,6 +6,13 @@ import SoundWaveform from "./SoundWaveform";
 const LibrarySound = ({ style, soundName, addSoundInstance }) => {
   const { library } = useContext(LibraryContext);
   const divRef = useRef(null);
+  const [isGrayscale, setIsGrayscale] = useState(false);
+
+  useEffect(() => {
+    if (soundName === undefined) return;
+    if (!library.get(soundName)) return; // for some reason being disposed doesn't update so well
+    setIsGrayscale(library.get(soundName).flags.has("trash"));
+  }, [library, soundName])
   
   const [loaded, setLoaded] = useState(false);
   useEffect(()=> {
@@ -21,7 +28,7 @@ const LibrarySound = ({ style, soundName, addSoundInstance }) => {
   
   return (
     <div ref={divRef} style={style} className={`cursor-grab touch-none select-none`} onPointerDown={handlePointerDown}>
-      <SoundWaveform soundName={soundName} loaded={loaded} className={"size-16"}/>
+      <SoundWaveform isGrayscale={isGrayscale} soundName={soundName} loaded={loaded} className={"size-16"}/>
     </div>
   )
 }
