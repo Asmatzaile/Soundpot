@@ -12,6 +12,12 @@ const Pot = ({ instanceManager, openSettings }) => {
   const { instances: soundInstancesData, remove: removeInstance } = instanceManager;
 
   const { library } = useContext(LibraryContext);
+  useEffect(()=> {
+    soundInstancesData.forEach(data => {
+      if (!library.has(data.soundName)) removeInstance(data.id)
+    })
+  }, [library]);
+
   const onSettingsChange = () => {
     if (settings.allowExplicit) return;
     soundInstancesData.forEach(data => {
