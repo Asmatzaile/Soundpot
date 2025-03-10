@@ -3,7 +3,7 @@ import { getElementCenter } from "@utils/dom";
 import LibraryContext from "@context/LibraryContext";
 import SoundWaveform from "./SoundWaveform";
 
-const LibrarySound = ({ soundName, addSoundInstance }) => {
+const LibrarySound = ({ style, soundName, addSoundInstance }) => {
   const { library } = useContext(LibraryContext);
   const divRef = useRef(null);
   
@@ -20,7 +20,7 @@ const LibrarySound = ({ soundName, addSoundInstance }) => {
   }
   
   return (
-    <div ref={divRef} className={`cursor-grab touch-none select-none`} onPointerDown={handlePointerDown}>
+    <div ref={divRef} style={style} className={`cursor-grab touch-none select-none`} onPointerDown={handlePointerDown}>
       <SoundWaveform soundName={soundName} loaded={loaded} className={"size-16"}/>
     </div>
   )
