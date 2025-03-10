@@ -25,9 +25,9 @@ const SoundWaveform = ({ className="", style={}, soundName, loaded, start, isGlo
     const maxSize = 12.5;
     const size = Math.max(1, value * maxSize);
     const staggerTime = `${i/displayBuffer.length*0.1}s`
-    return <g strokeDasharray={maxSize} strokeDashoffset={maxSize-size} style={{ "--t-time": "0.3s", transition: `stroke-dashoffset 0.2s ease-out ${staggerTime}`}}>
-      <line key={`${i}-out`} x1="0" x2="0" y1={-25} y2={-25-maxSize} style={{transform, transition: "transform var(--t-time) linear"}}/>
-      <line key={`${i}-in`} x1="0" x2="0" y1={-25} y2={-25+maxSize} style={{transform, transition: "transform var(--t-time) linear"}}/>
+    return <g key={i} strokeDasharray={maxSize} strokeDashoffset={maxSize-size} style={{ "--t-time": "0.3s", transition: `stroke-dashoffset 0.2s ease-out ${staggerTime}`}}>
+      <line x1="0" x2="0" y1={-25} y2={-25-maxSize} style={{transform, transition: "transform var(--t-time) linear"}}/>
+      <line x1="0" x2="0" y1={-25} y2={-25+maxSize} style={{transform, transition: "transform var(--t-time) linear"}}/>
     </g>
   });
   const [waveformLines, setWaveformLines] = useState(() => calcWaveformLines(Array(DISPLAYBUFFER_SIZE).fill(0)));
