@@ -10,10 +10,13 @@ const SoundWaveform = ({ className="", style={}, soundName, loaded, start, isGlo
   }, [soundName]);
   
   const { library, DISPLAYBUFFER_SIZE } = useContext(LibraryContext);
+  const waveformLinesSet = useRef(false);
   useEffect(()=> {
     if (!soundName) return;
     if (!library.get(soundName)) return;
     if (!library.get(soundName).displayBuffer) return;
+    if (waveformLinesSet.current === true) return; // ideally they'd only subscribe to the library sound
+    waveformLinesSet.current = true;
     setWaveformLines(calcWaveformLines(library.get(soundName).displayBuffer));
   }, [library])
   
@@ -27,7 +30,7 @@ const SoundWaveform = ({ className="", style={}, soundName, loaded, start, isGlo
       <line key={`${i}-in`} x1="0" x2="0" y1={-25} y2={-25+maxSize} style={{transform, transition: "transform var(--t-time) linear"}}/>
     </g>
   });
-  const [waveformLines, setWaveformLines] = useState(calcWaveformLines(Array(DISPLAYBUFFER_SIZE).fill(0)));
+  const [waveformLines, setWaveformLines] = useState(() => calcWaveformLines(Array(DISPLAYBUFFER_SIZE).fill(0)));
   
   const [highlightedLine, setHighlightedLine] = useState(-1);
   const currentIntervalId = useRef();
