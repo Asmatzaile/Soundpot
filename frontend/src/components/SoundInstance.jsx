@@ -90,7 +90,7 @@ const SoundInstance = ({ object, style, isDisposed }) => {
     onDragStart={handleDragStart} onDragEnd={handleDragEnd}
     className={`absolute ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none top-0`}
     style={{ ...style, zIndex, transform: to([x, y, style.transform, transform], (x, y, tf1, tf2) => `translate3d(${x}px, ${y}px, 0) ${tf1} ${tf2}`) }} >
-      <SoundWaveform soundName={soundName} loaded={loaded} className="size-24 -translate-x-1/2 -translate-y-1/2 absolute"/>
+      <SoundWaveform start={justCollided} soundName={soundName} loaded={loaded} className="size-24 -translate-x-1/2 -translate-y-1/2 absolute"/>
     </animated.div>
 }
 const AnimatedSoundInstance = animated(SoundInstance);
