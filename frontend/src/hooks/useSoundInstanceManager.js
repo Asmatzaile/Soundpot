@@ -14,26 +14,29 @@ const makeInstance = (key, soundName, pos, creationEvent, getHigherZ, update, ge
     pos,
     creationEvent,
     zIndex: 0,
-    isBusy: false,
+    isLoading: true,
+    isDragging: false,
     update,
     bringToFront: function () {
         this.zIndex = getHigherZ(this.zIndex);
         this.update(this);
     },
-    isUnder: function (other) {
-        if (this.isBusy || other === this) return false;
+    isOver: function (other) {
+        if (this.isLoading || other.isLoading || other.isDragging || other === this) return false;
         return doCirclesCollide(this.pos.x, this.pos.y, 48, other.pos.x, other.pos.y, 48);
     },
     getCollidingKeys: function () {
         return [...getInstances().entries()]
-            .filter(([_k, inst]) => inst.isUnder(this))
-            .map(([key]) => key);
+        .filter(([_k, inst]) => this.isOver(inst))
+        .map(([key]) => key);
     }
 })
 
 
 export function useSoundInstanceManager(mergeSounds) {
     const [instances, setInstances] = useState(new Map());
+    const instancesRef = useRef(instances);
+    instancesRef.current = instances;
 
     const [lastInstanceId, setLastInstanceId] = useState(-1);
     const newId = () => {
@@ -49,8 +52,8 @@ export function useSoundInstanceManager(mergeSounds) {
         highestZ.current = highest;
         return highest;
     }
-    
-    const get = (key) => key ? instances.get(key) : instances;
+
+    const get = (key) => key ? instancesRef.current.get(key) : instancesRef.current;
 
     const add = ({ soundName, pos, creationEvent }) => {
         const key = newId();
@@ -67,6 +70,7 @@ export function useSoundInstanceManager(mergeSounds) {
     const update = (key, updated) => {
         setInstances(prev => {
             const newMap = new Map(prev);
+            if (updated.isDragging) updated.willMerge = getFirstCollidingInstanceKeyOf(key); // TODO: also should check if just loaded
             newMap.set(key, updated);
             return newMap;
         })
@@ -105,13 +109,13 @@ export function useSoundInstanceManager(mergeSounds) {
         });
     }
 
+    const getFirstCollidingInstanceKeyOf = key => instancesRef.current.get(key)?.getCollidingKeys()[0];
+
     const mergeIfPossible = (key) => {
-        const collidingKey = instances.get(key).getCollidingKeys()[0];
+        const collidingKey = getFirstCollidingInstanceKeyOf(key);
         if (collidingKey !== undefined) mergeInstances(key, collidingKey)
     }
 
-    const instancesRef = useRef(instances);
-    instancesRef.current = instances;
 
     return { get instances () { return instancesRef.current}, update, add, remove, removeAllWithSound, mergeIfPossible, creationEvents }
 }

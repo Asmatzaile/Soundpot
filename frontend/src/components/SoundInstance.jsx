@@ -6,7 +6,7 @@ import { dispatchPointerEvent, dispatchDragEvent } from "@utils/dom";
 import LibraryContext from "@context/LibraryContext";
 import SoundWaveform from "./SoundWaveform";
 
-const SoundInstance = ({ object, style, isDisposed }) => {
+const SoundInstance = ({ object, style, isDisposed, isGlowing }) => {
   const { library } = useContext(LibraryContext);
   const {id, soundName, pos, creationEvent, zIndex, bringToFront, update} = object;
 
@@ -23,7 +23,8 @@ const SoundInstance = ({ object, style, isDisposed }) => {
 
   useEffect(() => {
     if (isDisposed) return;
-    object.isBusy = !loaded || dragging;
+    object.isLoading = !loaded;
+    object.isDragging = dragging;
     object.update(object);
   }, [loaded, dragging, isDisposed]);
 
@@ -49,9 +50,12 @@ const SoundInstance = ({ object, style, isDisposed }) => {
   }, [dragging, object, isDisposed]);
 
   const [justCollided, setJustCollided] = useState(false);
+  const disposedRef = useRef(isDisposed);
+  disposedRef.current = isDisposed;
   useEffect(() => {
     const controller = new AbortController();
     document.addEventListener("ripplecollision", e => {
+      if (disposedRef.current) return;
       if (e.soundInstanceId === id) setJustCollided(true);
     }, { signal: controller.signal });
     return () => controller.abort();
@@ -90,7 +94,7 @@ const SoundInstance = ({ object, style, isDisposed }) => {
     onDragStart={handleDragStart} onDragEnd={handleDragEnd}
     className={`absolute ${dragging ? 'cursor-grabbing' : 'cursor-grab'} touch-none top-0`}
     style={{ ...style, zIndex, transform: to([x, y, style.transform, transform], (x, y, tf1, tf2) => `translate3d(${x}px, ${y}px, 0) ${tf1} ${tf2}`) }} >
-      <SoundWaveform start={justCollided} soundName={soundName} loaded={loaded} className="size-24 -translate-x-1/2 -translate-y-1/2 absolute"/>
+      <SoundWaveform isGlowing={isGlowing} start={justCollided} soundName={soundName} loaded={loaded} className="size-24 -translate-x-1/2 -translate-y-1/2 absolute"/>
     </animated.div>
 }
 const AnimatedSoundInstance = animated(SoundInstance);

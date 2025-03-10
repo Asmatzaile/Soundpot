@@ -42,9 +42,10 @@ const Water = ({ soundInstancesData }) => {
     
     [...soundInstancesData.entries()].forEach(([instanceKey, instanceData])=> {
       const {pos: ripplePos, size: rippleSize} = rippleData;
-      if (instanceData.isBusy) {
+      if (instanceData.isLoading) return; // don't collide with instances that are loading
+      if (instanceData.isDragging) {
         rippleData.collidedWith.delete(instanceKey); // that way it can collide again if put up + down 
-        return; // don't collide with busy instances (dragging / loading)
+        return; // don't collide with instances that are being dragged
       }
       if (rippleData.collidedWith.has(instanceKey)) return; // only care about new collisions
       if (!doCirclesCollide(ripplePos.x, ripplePos.y, rippleSize/2, instanceData.pos.x, instanceData.pos.y, 48)) return;

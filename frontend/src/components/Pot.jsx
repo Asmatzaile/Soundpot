@@ -46,12 +46,20 @@ const Pot = ({ instanceManager, openSettings }) => {
       tension: 300,
     }
   });
+
+  const willMerge = new Set();
+  soundInstancesData.forEach(instance => {
+    if (willMerge.has(instance.id)) return;
+    if (instance.willMerge === undefined) return;
+    willMerge.add(instance.id);
+    willMerge.add(instance.willMerge);
+  })
   
   return(
     <div id="pot" className="bg-stone-900 relative">
       <Water soundInstancesData={soundInstancesData} />
       {transitions((style, [key, instanceData]) => <AnimatedSoundInstance style={{...style}} key={key}
-        object={instanceData} isDisposed={!soundInstancesData.has(key)} />
+        object={instanceData} isDisposed={!soundInstancesData.has(key)} isGlowing={willMerge.has(key)}/>
       )}
       <div className="pointer-events-none absolute grid grid-cols-2 grid-rows-2 h-full w-full p-4 inset-0">
         <div className="grid grid-flow-col col-start-2 row-start-2 place-self-end">
