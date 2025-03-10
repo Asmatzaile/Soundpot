@@ -14,7 +14,9 @@ const Pot = ({ instanceManager, openSettings }) => {
   const { library } = useContext(LibraryContext);
   useEffect(()=> {
     soundInstancesData.forEach(data => {
-      if (!library.has(data.soundName)) removeInstance(data.id)
+      if (data.soundName === undefined) return; // for sounds that are newly created
+      if (library.has(data.soundName)) return;
+      removeInstance(data.id); // remove sounds that have been deleted
     })
   }, [library]);
 
