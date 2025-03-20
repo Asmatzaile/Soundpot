@@ -7,11 +7,13 @@ import useLibrary from '@hooks/useLibrary';
 import { useSoundInstanceManager } from '@hooks/useSoundInstanceManager';
 import { SettingsModal } from '@components/SettingsModal';
 import { SettingsProvider } from '@context/SettingsContext';
+import { CreditsModal } from '@components/CreditsModal';
 
 function App() {
   const library = useLibrary();
   const instanceManager = useSoundInstanceManager(library.merge);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCreditsOpen, setIsCreditsOpen] = useState(false);
   const [started, setStarted] = useState(false)
 
   useEffect(()=> {
@@ -42,11 +44,12 @@ function App() {
   return (
     <SettingsProvider>
       <main className="h-dvh w-dvw grid grid-cols-[4fr_minmax(270px,1fr)] touch-none overflow-clip">
-        <LibraryContext.Provider value={{ library: library.data, addSoundToLibrary: library.upload, removeSound, DISPLAYBUFFER_SIZE: library.DISPLAYBUFFER_SIZE, flagSound: library.flag, unflagSound: library.unflag }}>
-          <Pot instanceManager={instanceManager} openSettings={() =>setIsSettingsOpen(true)}/>
+        <LibraryContext.Provider value={{ library: library.data, addSoundToLibrary: library.upload, removeSound, DISPLAYBUFFER_SIZE: library.DISPLAYBUFFER_SIZE, flagSound: library.flag, unflagSound: library.unflag, containsFreesoundSounds: library.containsFreesoundSounds, downloadAttribution: library.downloadAttribution }}>
+          <Pot instanceManager={instanceManager} openSettings={() =>setIsSettingsOpen(true)} openCredits={() => setIsCreditsOpen(true)}/>
           <Sidebar instanceManager={instanceManager} />
+          { isSettingsOpen && <SettingsModal close={()=> setIsSettingsOpen(false)}/> }
+          { isCreditsOpen && <CreditsModal close={()=> setIsCreditsOpen(false)}/>}
         </LibraryContext.Provider>
-        { isSettingsOpen && <SettingsModal close={()=> setIsSettingsOpen(false)}/> }
       </main>
     </SettingsProvider>
   )

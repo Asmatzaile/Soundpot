@@ -3,11 +3,11 @@ import { useTransition } from "@react-spring/web";
 import AnimatedSoundInstance from "./SoundInstance";
 import Water from "./Water";
 import { isSelectorInPoint } from "@utils/dom";
-import { SettingsIcon } from "lucide-react";
+import { SettingsIcon, InfoIcon } from "lucide-react";
 import { useSettings } from "@context/SettingsContext";
 import LibraryContext from "@context/LibraryContext";
 
-const Pot = ({ instanceManager, openSettings }) => {
+const Pot = ({ instanceManager, openSettings, openCredits }) => {
   const { settings } = useSettings();
   const { instances: soundInstancesData, remove: removeInstance } = instanceManager;
 
@@ -70,9 +70,12 @@ const Pot = ({ instanceManager, openSettings }) => {
         object={instanceData} isDisposed={!soundInstancesData.has(key)} isGlowing={willMerge.has(key)}/>
       )}
       <div className="pointer-events-none absolute grid grid-cols-2 grid-rows-2 h-full w-full p-4 inset-0">
-        <div className="grid grid-flow-col col-start-2 row-start-2 place-self-end">
+        <div className="grid col-start-2 row-start-2 place-self-end text-stone-600 gap-2">
           <button className="pointer-events-auto" onClick={openSettings}>
-            <SettingsIcon className="text-stone-600"/>
+            <SettingsIcon />
+          </button>
+          <button className="pointer-events-auto" onClick={openCredits}>
+            <InfoIcon />
           </button>
         </div>
       </div>

@@ -117,6 +117,8 @@ export default function useLibrary() {
     return [...latestLibrary.current.entries()].filter(([_, metadata]) => metadata.origin === "freesound").map(([_, metadata]) => metadata);
   }
 
+  const containsFreesoundSounds = () => getFreesoundSoundsMetadata().length > 0;
+
   const downloadAttribution = () => {
     const data = getFreesoundSoundsMetadata()
       .map(({ original_name, author, source_url, license }) => ({ title: original_name, author, source: source_url, license }));
@@ -126,5 +128,5 @@ export default function useLibrary() {
 
   window.getAttr = downloadAttribution; // TODO: only for testing. will remove
 
-  return { data: library, upload, remove, merge, flag, unflag, DISPLAYBUFFER_SIZE }
+  return { data: library, upload, remove, merge, flag, unflag, downloadAttribution, containsFreesoundSounds, DISPLAYBUFFER_SIZE }
 }
