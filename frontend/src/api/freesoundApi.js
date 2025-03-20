@@ -25,14 +25,19 @@ const getSoundCount = async (url) => {
     return (await response.json()).count
 }
 
+const getSourceUrlOfSound = ({author, id}) => {
+    return `https://freesound.org/people/${author}/sounds/${id}`;
+}
+
 const cleanResult = result => {
     result.freesound_id = result.id
     delete result.id
     result.author = result.username;
     delete result.username;
+    result.source_url = getSourceUrlOfSound({author: result.author, id: result.freesound_id});
     result.date = result.created;
     delete result.created;
-    result.url = result.previews["preview-hq-ogg"];
+    result.media_url = result.previews["preview-hq-ogg"];
     delete result.previews;
     if (!result.is_explicit) delete result.is_explicit
     return result;
@@ -40,7 +45,7 @@ const cleanResult = result => {
 
 // In the freesound api, instance is the data about the sound. different from SoundInstance in Soundpot.
 const getSoundInstanceWithNumber = async (url, number) => {
-    url = addParamsToUrl(url, {page_size:1, page:number, fields:"id,name,username,previews,created,is_explicit"})
+    url = addParamsToUrl(url, {page_size:1, page:number, fields:"id,name,username,license,previews,created,is_explicit"})
     const response = await fetch(url);
     const result = (await response.json()).results[0];
     return cleanResult(result);
@@ -55,10 +60,10 @@ export const getRandomSound = async options => {
     url = addFiltersToUrl(url, filters);
     soundCount = soundCount ?? await getSoundCount(url);
     const soundMetadata = await getSoundInstanceWithNumber(url, randInt(soundCount));
-    return fetch(soundMetadata.url, { signal })
+    return fetch(soundMetadata.media_url, { signal })
     .then(response => response.blob())
     .then(sound => {
-        delete soundMetadata.url;
+        delete soundMetadata.media_url;
         return [sound, soundMetadata]
     })
     .catch(_e => []);
