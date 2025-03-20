@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { ToneAudioBuffer } from "tone";
+import Papa from "papaparse"
 import { resampleArray } from "@utils/math";
 import * as api from "@api/libraryApi";
-import { ToneAudioBuffer } from "tone";
+import { downloadFile } from "@utils/url";
 
 
 export default function useLibrary() {
@@ -109,8 +111,20 @@ export default function useLibrary() {
       n.set(soundName, {...prev.get(soundName), flags: nFlags})
       return n;
     })
-
   }
+
+  const getFreesoundSoundsMetadata = () => {
+    return [...latestLibrary.current.entries()].filter(([_, metadata]) => metadata.origin === "freesound").map(([_, metadata]) => metadata);
+  }
+
+  const downloadAttribution = () => {
+    const data = getFreesoundSoundsMetadata()
+      .map(({ original_name, author, source_url, license }) => ({ title: original_name, author, source: source_url, license }));
+    const csv = Papa.unparse(data);
+    downloadFile({file: csv, filename: "attribution.csv", type: "text/csv;charset=utf-8;"});
+  }
+
+  window.getAttr = downloadAttribution; // TODO: only for testing. will remove
 
   return { data: library, upload, remove, merge, flag, unflag, DISPLAYBUFFER_SIZE }
 }
