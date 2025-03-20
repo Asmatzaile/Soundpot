@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSettings } from "@context/SettingsContext";
 import { clamp } from "@utils/math";
 
@@ -10,19 +10,23 @@ export function SettingsModal({close}) {
         updateSettings(localSettings);
         close();
     }
+
+    const dialogRef = useRef();
     useEffect(() => {
+        dialogRef.current.showModal();
+
         const controller = new AbortController();
         document.addEventListener("keydown", e => {
-            if (e.key === "Escape") close();
-        })
+            if (e.key !== "Escape") return;
+            e.preventDefault();
+            close();
+        }, { signal: controller.signal })
         return () => controller.abort();
-    })
-    const zIndex = 2147483647; // largest zindex posible
+    }, []);
 
     const sanitize = value => value.replace(/\D/g, '');
 
-    return <div className="absolute isolate grid w-full h-full" style={{ background: "#0009", zIndex }}> 
-        <dialog className="grid gap-4 place-self-center p-4 rounded-lg bg-stone-700 text-stone-50 min-w-72">
+    return <dialog ref={dialogRef} className="grid gap-4 place-self-center p-4 rounded-lg bg-stone-700 text-stone-50 min-w-72">
         SETTINGS
         <div className="ml-4 grid grid-cols-[auto_auto_auto] gap-y-2">
             <label className="col-span-full grid grid-cols-subgrid">
@@ -52,6 +56,5 @@ export function SettingsModal({close}) {
             <button className="text-stone-200 rounded-lg py-0.5 px-1 min-w-20" onClick={close}>CLOSE</button>
             <button className="border-stone-800 border-2 bg-stone-800 rounded-lg min-w-20 py-0.5 px-1" onClick={handleSave}>SAVE</button>
         </div>
-        </dialog>
-    </div>
+    </dialog>
 }
